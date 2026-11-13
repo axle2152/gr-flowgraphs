@@ -1,0 +1,57 @@
+id: ntsc_btsc_btsc_encoder
+label: BTSC Encoder
+category: '[NTSC BTSC]'
+flags: [python]
+
+parameters:
+- id: stereo
+  label: Stereo
+  dtype: bool
+  default: 'True'
+- id: sap
+  label: SAP input
+  dtype: bool
+  default: 'False'
+- id: gain_db
+  label: Gain (dB)
+  dtype: real
+  default: '0'
+- id: sap_gain_db
+  label: SAP gain (dB)
+  dtype: real
+  default: '0'
+  hide: ${ 'none' if sap else 'all' }
+
+inputs:
+- label: L
+  domain: stream
+  dtype: float
+- label: R
+  domain: stream
+  dtype: float
+- label: SAP
+  domain: stream
+  dtype: float
+  hide: ${ not sap }
+
+outputs:
+- label: dev
+  domain: stream
+  dtype: float
+
+templates:
+  imports: import ntsc_btsc.blocks
+  make: ntsc_btsc.blocks.btsc_encoder(stereo=${stereo}, sap=${sap}, gain_db=${gain_db}, sap_gain_db=${sap_gain_db})
+
+documentation: |-
+  BTSC (MTS) composite encoder after FCC OET-60: 75 us main channel,
+  15.734 kHz pilot, dbx-TV encoded L-R on 2 fH (DSB-SC), optional dbx-TV
+  SAP on an FM subcarrier at 5 fH.
+
+  Inputs must run at ntsc_btsc.BTSC_RATE (= 4fsc / 26 = 550699.3 Hz,
+  exactly 35 x fH); 1.0 = digital full scale = 100 % modulation at low
+  frequencies.  Output is the aural carrier deviation in Hz: feed a
+  Frequency Mod block with sensitivity 2*pi/ntsc_btsc.BTSC_RATE.
+  The pilot is generated from the sample count, so it is only locked to
+  the line rate if your video comes from the same sample clock.
+file_format: 1

@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+*.cf32
+*.cs8
+*.cs16
+*.f32
+.pytest_cache/

@@ -1,0 +1,154 @@
+options:
+  parameters:
+    author: ''
+    category: Custom
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: Writes 10 s of cf32 IQ; check it with python3 -m ntsc_btsc.verify
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: no_gui
+    hier_block_src_path: '.:'
+    id: tv_to_file
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: run
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: NTSC BTSC TV transmitter to IQ file
+    window_size: 1280, 1024
+  states:
+    coordinate:
+    - 8
+    - 8
+    rotation: 0
+    state: enabled
+blocks:
+- name: media
+  id: parameter
+  parameters:
+    alias: ''
+    comment: File, rtmp://..., srt://..., test, bars
+    hide: none
+    label: Input
+    short_id: i
+    type: str
+    value: test
+  states:
+    coordinate:
+    - 320
+    - 8
+    rotation: 0
+    state: enabled
+- name: import_0
+  id: import
+  parameters:
+    alias: ''
+    comment: ''
+    imports: import ntsc_btsc
+  states:
+    coordinate:
+    - 8
+    - 120
+    rotation: 0
+    state: enabled
+- name: ntsc_btsc_tv_source_0
+  id: ntsc_btsc_tv_source
+  parameters:
+    affinity: ''
+    alias: ''
+    aspect: '''pad'''
+    audio_gain_db: '0'
+    aural_db: '-10'
+    channel_offset: 1.75e6
+    comment: ''
+    idle: '''bars'''
+    input: media
+    input_args: ''
+    interlaced: 'True'
+    latency: '0.3'
+    level: '0.9'
+    listen: 'False'
+    live: None
+    loop_file: 'False'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    sap: ''
+    sap_track: '-1'
+    setup: '7.5'
+    stereo: 'True'
+    samp_rate: ntsc_btsc.FS
+  states:
+    coordinate:
+    - 120
+    - 200
+    rotation: 0
+    state: enabled
+- name: outfile
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Output file
+    short_id: o
+    type: str
+    value: tv.cf32
+  states:
+    coordinate:
+    - 440
+    - 8
+    rotation: 0
+    state: enabled
+- name: blocks_head_0
+  id: blocks_head
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_items: int(10 * ntsc_btsc.FS)
+    type: complex
+    vlen: '1'
+  states:
+    coordinate:
+    - 440
+    - 220
+    rotation: 0
+    state: enabled
+- name: blocks_file_sink_0
+  id: blocks_file_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    append: 'False'
+    comment: ''
+    file: outfile
+    type: complex
+    unbuffered: 'False'
+    vlen: '1'
+  states:
+    coordinate:
+    - 640
+    - 212
+    rotation: 0
+    state: enabled
+connections:
+- - ntsc_btsc_tv_source_0
+  - '0'
+  - blocks_head_0
+  - '0'
+- - blocks_head_0
+  - '0'
+  - blocks_file_sink_0
+  - '0'
+metadata:
+  file_format: 1
+  grc_version: 3.10.9.2

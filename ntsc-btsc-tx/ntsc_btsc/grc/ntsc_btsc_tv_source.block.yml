@@ -1,0 +1,127 @@
+id: ntsc_btsc_tv_source
+label: NTSC/BTSC TV Source
+category: '[NTSC BTSC]'
+flags: [python]
+
+parameters:
+- id: input
+  label: Input
+  dtype: string
+  default: test
+- id: listen
+  label: Listen (be the server)
+  dtype: bool
+  default: 'False'
+  hide: part
+- id: live
+  label: Live input
+  dtype: enum
+  default: 'None'
+  options: ['None', 'True', 'False']
+  option_labels: [Auto, 'Yes', 'No']
+  hide: part
+- id: loop_file
+  label: Loop file
+  dtype: bool
+  default: 'False'
+  hide: part
+- id: latency
+  label: Live latency (s)
+  dtype: real
+  default: '0.3'
+  hide: part
+- id: samp_rate
+  label: Output sample rate
+  dtype: real
+  default: ntsc_btsc.FS
+- id: channel_offset
+  label: Channel centre offset (Hz)
+  dtype: real
+  default: '1.75e6'
+- id: stereo
+  label: BTSC stereo
+  dtype: bool
+  default: 'True'
+- id: audio_gain_db
+  label: Audio gain (dB)
+  dtype: real
+  default: '0'
+- id: sap
+  label: SAP input
+  dtype: string
+  default: ''
+  hide: part
+- id: sap_track
+  label: SAP audio track (-1 = off)
+  dtype: int
+  default: '-1'
+  hide: part
+- id: aural_db
+  label: Aural carrier level (dB)
+  dtype: real
+  default: '-10'
+- id: level
+  label: Peak level
+  dtype: real
+  default: '0.9'
+- id: aspect
+  label: Aspect
+  dtype: enum
+  default: "'pad'"
+  options: ["'pad'", "'crop'", "'stretch'"]
+  option_labels: [Letterbox/pillarbox, Crop, Stretch]
+  hide: part
+- id: interlaced
+  label: 59.94i motion
+  dtype: bool
+  default: 'True'
+  hide: part
+- id: setup
+  label: Black setup (IRE)
+  dtype: real
+  default: '7.5'
+  hide: part
+- id: idle
+  label: Idle picture
+  dtype: enum
+  default: "'bars'"
+  options: ["'bars'", "'black'"]
+  option_labels: [Colour bars, Black]
+  hide: part
+- id: input_args
+  label: Extra ffmpeg input args
+  dtype: string
+  default: ''
+  hide: part
+
+outputs:
+- domain: stream
+  dtype: complex
+
+templates:
+  imports: import ntsc_btsc
+  make: >-
+    ntsc_btsc.tv_source(input=${input}, channel_offset=${channel_offset},
+    aural_db=${aural_db}, level=${level}, stereo=${stereo}, sap=${sap},
+    sap_track=${sap_track}, audio_gain_db=${audio_gain_db}, setup=${setup},
+    aspect=${aspect}, interlaced=${interlaced}, loop=${loop_file}, live=${live},
+    listen=${listen}, latency=${latency}, idle=${idle}, input_args=${input_args},
+    samp_rate=${samp_rate})
+
+documentation: |-
+  NTSC-M television transmitter with BTSC stereo (and optional SAP) sound.
+
+  Output: complex baseband at "Output sample rate".  The signal is made at
+  4 x fsc = 14.318182 Msps (ntsc_btsc.FS) and resampled exactly when another
+  rate is set - use 15e6 (or another whole-MHz rate) for the Soapy HackRF
+  Sink, which doesn't accept 14.318182 Msps.  Give the SDR the same sample
+  rate and a centre frequency of visual_carrier + 1.75 MHz - channel_offset.  With the default offset of
+  1.75 MHz that is the visual carrier itself, e.g. ntsc_btsc.visual_carrier(3)
+  for broadcast channel 3.
+
+  Input: anything ffmpeg can open - a file, rtmp://, rtsp://, srt://, udp://,
+  or 'test' / 'bars' for a built-in pattern with 1 kHz left / 400 Hz right.
+  To receive OBS directly set Input to rtmp://0.0.0.0:1935/live/obs and
+  Listen = True, then stream from OBS to rtmp://<this host>:1935/live with
+  stream key 'obs'.
+file_format: 1

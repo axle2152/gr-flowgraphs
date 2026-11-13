@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ntsc-btsc-tx"
+version = "0.1.0"
+description = "GNU Radio NTSC-M television transmitter with BTSC (MTS) stereo and SAP sound"
+readme = "README.md"
+license = {text = "GPL-3.0-or-later"}
+requires-python = ">=3.8"
+# GNU Radio (>= 3.9, with gr-osmosdr and/or gr-soapy) and ffmpeg come from
+# your system / conda, not from PyPI.
+dependencies = ["numpy", "scipy"]
+
+[project.optional-dependencies]
+verify = ["pillow"]
+test = ["pytest", "pillow"]
+
+[project.scripts]
+ntsc-btsc-tx = "ntsc_btsc.cli:main"
+ntsc-btsc-verify = "ntsc_btsc.verify:main"
+
+[tool.setuptools]
+packages = ["ntsc_btsc"]
+
+[tool.setuptools.package-data]
+ntsc_btsc = ["grc/*.block.yml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

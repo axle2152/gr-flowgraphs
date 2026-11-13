@@ -1,0 +1,173 @@
+options:
+  parameters:
+    author: ''
+    category: Custom
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: NTSC-M + BTSC stereo on a HackRF through gr-soapy (works on MSYS2, which has no gr-osmosdr)
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: no_gui
+    hier_block_src_path: '.:'
+    id: tv_hackrf_soapy
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: NTSC BTSC TV transmitter (HackRF via SoapySDR)
+    window_size: 1280, 1024
+  states:
+    coordinate:
+    - 8
+    - 8
+    rotation: 0
+    state: enabled
+blocks:
+- name: channel
+  id: parameter
+  parameters:
+    alias: ''
+    comment: Broadcast channel number
+    hide: none
+    label: Channel
+    short_id: c
+    type: intx
+    value: '3'
+  states:
+    coordinate:
+    - 200
+    - 8
+    rotation: 0
+    state: enabled
+- name: media
+  id: parameter
+  parameters:
+    alias: ''
+    comment: File, rtmp://..., srt://..., test, bars
+    hide: none
+    label: Input
+    short_id: i
+    type: str
+    value: test
+  states:
+    coordinate:
+    - 320
+    - 8
+    rotation: 0
+    state: enabled
+- name: tx_gain
+  id: parameter
+  parameters:
+    alias: ''
+    comment: HackRF TX VGA, 0-47 dB
+    hide: none
+    label: TX gain
+    short_id: g
+    type: eng_float
+    value: '0'
+  states:
+    coordinate:
+    - 440
+    - 8
+    rotation: 0
+    state: enabled
+- name: visual
+  id: variable
+  parameters:
+    comment: Visual carrier; the HackRF is tuned right on it
+    value: ntsc_btsc.visual_carrier(channel)
+  states:
+    coordinate:
+    - 560
+    - 8
+    rotation: 0
+    state: enabled
+- name: samp_rate
+  id: variable
+  parameters:
+    comment: Soapy HackRF only takes whole-MHz rates
+    value: 15e6
+  states:
+    coordinate:
+    - 680
+    - 8
+    rotation: 0
+    state: enabled
+- name: import_0
+  id: import
+  parameters:
+    alias: ''
+    comment: ''
+    imports: import ntsc_btsc
+  states:
+    coordinate:
+    - 8
+    - 120
+    rotation: 0
+    state: enabled
+- name: ntsc_btsc_tv_source_0
+  id: ntsc_btsc_tv_source
+  parameters:
+    affinity: ''
+    alias: ''
+    aspect: '''pad'''
+    audio_gain_db: '0'
+    aural_db: '-10'
+    channel_offset: 1.75e6
+    comment: ''
+    idle: '''bars'''
+    input: media
+    input_args: ''
+    interlaced: 'True'
+    latency: '0.3'
+    level: '0.9'
+    listen: 'False'
+    live: None
+    loop_file: 'False'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    sap: ''
+    sap_track: '-1'
+    setup: '7.5'
+    stereo: 'True'
+    samp_rate: samp_rate
+  states:
+    coordinate:
+    - 120
+    - 200
+    rotation: 0
+    state: enabled
+- name: soapy_hackrf_sink_0
+  id: soapy_hackrf_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    amp: 'False'
+    bandwidth: 12e6
+    center_freq: visual
+    comment: ''
+    dev_args: ''''''
+    samp_rate: samp_rate
+    type: fc32
+    vga: tx_gain
+  states:
+    coordinate:
+    - 520
+    - 200
+    rotation: 0
+    state: enabled
+connections:
+- - ntsc_btsc_tv_source_0
+  - '0'
+  - soapy_hackrf_sink_0
+  - '0'
+metadata:
+  file_format: 1
+  grc_version: 3.10.9.2

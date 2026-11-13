@@ -1,0 +1,58 @@
+id: ntsc_btsc_composite_source
+label: NTSC Composite Source
+category: '[NTSC BTSC]'
+flags: [python]
+
+parameters:
+- id: input
+  label: Input
+  dtype: string
+  default: test
+- id: output
+  label: Output
+  dtype: enum
+  default: "'ire'"
+  options: ["'ire'", "'rf'"]
+  option_labels: [Composite (IRE), AM envelope (1.0 = sync tip)]
+- id: setup
+  label: Black setup (IRE)
+  dtype: real
+  default: '7.5'
+- id: aspect
+  label: Aspect
+  dtype: enum
+  default: "'pad'"
+  options: ["'pad'", "'crop'", "'stretch'"]
+  hide: part
+- id: interlaced
+  label: 59.94i motion
+  dtype: bool
+  default: 'True'
+  hide: part
+- id: loop_file
+  label: Loop file
+  dtype: bool
+  default: 'False'
+  hide: part
+- id: listen
+  label: Listen (be the server)
+  dtype: bool
+  default: 'False'
+  hide: part
+
+outputs:
+- domain: stream
+  dtype: float
+
+templates:
+  imports: import ntsc_btsc
+  make: >-
+    ntsc_btsc.composite_source(input=${input}, output=${output}, setup=${setup},
+    aspect=${aspect}, interlaced=${interlaced}, loop=${loop_file}, listen=${listen})
+
+documentation: |-
+  NTSC-M composite video (SMPTE 170M) at 4 x fsc = 14.318182 Msps from
+  any ffmpeg input.  "Composite (IRE)" gives -40..+100 IRE values, divide
+  by 140 for a 1 V p-p style signal; "AM envelope" is ready for negative
+  amplitude modulation (sync tip 1.0, blanking 0.75, white 0.125).
+file_format: 1
