@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import os
 import signal as pysignal
 import sys
 import time
@@ -104,6 +105,12 @@ def build_parser():
                      help="output sample rate in Hz (default 14318182 = 4fsc; 15e6 for HackRF via "
                           "SoapySDR, which only takes whole-MHz rates).  Other rates are produced "
                           "with an exact rational resampler")
+    out.add_argument("--buffer", type=float, default=0.15, metavar="SECONDS",
+                     help="extra buffering in front of the SDR so short CPU stalls don't cause "
+                          "underruns (default 0.15)")
+    out.add_argument("--priority", choices=["normal", "high"], default="normal",
+                     help="high: raise process priority (Windows high priority class; Linux "
+                          "real-time scheduling, needs an rtprio limit or root)")
     out.add_argument("--bandwidth", type=float, default=0.0,
                      help="SDR analogue filter bandwidth in Hz (0 = driver default)")
     out.add_argument("--ppm", type=float, default=0.0, help="frequency correction (osmosdr)")
@@ -133,6 +140,43 @@ def default_bandwidth(args):
     lo_edge = abs(args.offset - C.VISUAL_TO_CENTER - 1.25e6)
     hi_edge = abs(args.offset - C.VISUAL_TO_CENTER + C.AURAL_OFFSET + 0.25e6)
     return 2 * max(lo_edge, hi_edge, 3.5e6) + 1e6
+
+
+def raise_priority():
+    """Raise this process's scheduling priority.  Returns a description, or
+    None if it couldn't be done."""
+    if os.name == "nt":
+        import ctypes
+        from ctypes import wintypes
+        k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        k32.GetCurrentProcess.restype = wintypes.HANDLE
+        k32.SetPriorityClass.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+        k32.SetPriorityClass.restype = wintypes.BOOL
+        HIGH_PRIORITY_CLASS = 0x00000080
+        if k32.SetPriorityClass(k32.GetCurrentProcess(), HIGH_PRIORITY_CLASS):
+            return "Windows high priority class"
+        return None
+    from gnuradio import gr
+    if gr.enable_realtime_scheduling() == gr.RT_OK:
+        return "real-time scheduling"
+    try:
+        os.nice(-10)
+        return "nice -10"
+    except OSError:
+        return None
+
+
+def make_source(args):
+    from .flowgraph import tv_source
+    return tv_source(
+        input=args.input, channel_offset=args.offset, aural_db=args.aural_level,
+        level=args.level, stereo=not args.mono, audio=not args.no_audio, sap=args.sap,
+        sap_track=args.sap_track, audio_gain_db=args.audio_gain, sap_gain_db=args.sap_gain,
+        setup=args.setup, white_clip=args.white_clip, aspect=args.aspect,
+        interlaced=not args.progressive, loop=args.loop, live=args.live, listen=args.listen,
+        latency=args.latency, idle=args.idle, ffmpeg=args.ffmpeg,
+        input_args=args.ffmpeg_input_args, start=args.start, transport=args.transport,
+        samp_rate=args.samp_rate, buffer=args.buffer, priority=args.priority)
 
 
 def resolve_sink(name):
@@ -212,7 +256,6 @@ def main(argv=None):
 
     from gnuradio import blocks, gr
     from .blocks import status_probe
-    from .flowgraph import tv_source
     from .media import ffmpeg_available
 
     if not ffmpeg_available(args.ffmpeg):
@@ -228,16 +271,18 @@ def main(argv=None):
     vis = resolve_frequency(args)
     lo = None if vis is None else vis + C.VISUAL_TO_CENTER - args.offset
 
+    if args.priority == "high":
+        how = raise_priority()
+        if how:
+            log.info("priority: %s", how)
+        else:
+            log.warning("couldn't raise priority (Linux needs an rtprio limit or root)")
+
     tb = gr.top_block("NTSC BTSC transmitter")
-    src = tv_source(
-        input=args.input, channel_offset=args.offset, aural_db=args.aural_level,
-        level=args.level, stereo=not args.mono, audio=not args.no_audio, sap=args.sap,
-        sap_track=args.sap_track, audio_gain_db=args.audio_gain, sap_gain_db=args.sap_gain,
-        setup=args.setup, white_clip=args.white_clip, aspect=args.aspect,
-        interlaced=not args.progressive, loop=args.loop, live=args.live, listen=args.listen,
-        latency=args.latency, idle=args.idle, ffmpeg=args.ffmpeg,
-        input_args=args.ffmpeg_input_args, start=args.start, transport=args.transport,
-        samp_rate=args.samp_rate)
+    try:
+        src = make_source(args)
+    except ValueError as e:
+        raise SystemExit(f"error: {e}")
     chain = [src]
     if args.duration:
         chain.append(blocks.head(gr.sizeof_gr_complex, int(args.duration * args.samp_rate)))

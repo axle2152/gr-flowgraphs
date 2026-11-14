@@ -34,6 +34,11 @@ parameters:
   label: Output sample rate
   dtype: real
   default: ntsc_btsc.FS
+- id: sdr_buffer
+  label: SDR buffer (s)
+  dtype: real
+  default: '0.15'
+  hide: part
 - id: channel_offset
   label: Channel centre offset (Hz)
   dtype: real
@@ -106,7 +111,7 @@ templates:
     sap_track=${sap_track}, audio_gain_db=${audio_gain_db}, setup=${setup},
     aspect=${aspect}, interlaced=${interlaced}, loop=${loop_file}, live=${live},
     listen=${listen}, latency=${latency}, idle=${idle}, input_args=${input_args},
-    samp_rate=${samp_rate})
+    samp_rate=${samp_rate}, buffer=${sdr_buffer})
 
 documentation: |-
   NTSC-M television transmitter with BTSC stereo (and optional SAP) sound.

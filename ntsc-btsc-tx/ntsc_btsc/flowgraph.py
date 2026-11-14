@@ -25,6 +25,12 @@ line rate as the standard requires.
 By default the SDR is tuned to the visual carrier (``channel_offset`` =
 +1.75 MHz): the LO leakage of cheap SDRs then hides under the visual carrier
 and their I/Q image falls outside the channel.
+
+Other output rates (e.g. 15 Msps for HackRF via SoapySDR, which only takes
+whole-MHz rates) are reached without resampling the full-rate complex sum:
+the real video envelope goes through a rational resampler before the VSB
+filter, and the low-rate BTSC composite is nudged to rate/N (555.6 kHz for
+15 Msps, N = 27) so the aural zero-stuffing lands exactly on the output rate.
 """
 
 import shlex
@@ -50,7 +56,13 @@ def _shifted_lowpass(fc, passband, stopband, atten, gain, fs=C.FS):
     return (gain * h * np.exp(2j * np.pi * fc * n / fs)).astype(np.complex64)
 
 
-def vsb_taps(gain=1.0, lower=0.75e6, upper=4.2e6, transition=0.3e6, atten=50.0):
+def _lowpass(passband, stopband, atten, gain, fs):
+    numtaps, beta = signal.kaiserord(atten, (stopband - passband) / (fs / 2.0))
+    h = signal.firwin(numtaps, (passband + stopband) / 2.0, window=("kaiser", beta), fs=fs)
+    return (gain * h).astype(np.float32)
+
+
+def vsb_taps(gain=1.0, fs=C.FS, lower=0.75e6, upper=4.2e6, transition=0.3e6, atten=50.0):
     """Complex FIR passing -lower..+upper Hz around the visual carrier (at 0 Hz).
 
     Zero phase at the carrier.  Upper stop band starts at 4.5 MHz (>= 30 dB
@@ -58,37 +70,73 @@ def vsb_taps(gain=1.0, lower=0.75e6, upper=4.2e6, transition=0.3e6, atten=50.0):
     -1.05 MHz (FCC: -20 dB at -1.25 MHz).
     """
     hw = (upper + lower) / 2.0
-    return _shifted_lowpass((upper - lower) / 2.0, hw, hw + transition, atten, gain)
+    return _shifted_lowpass((upper - lower) / 2.0, hw, hw + transition, atten, gain, fs)
 
 
-def aural_taps(carrier_hz, gain=1.0, passband=180e3, stopband=370e3, atten=60.0):
+def aural_taps(carrier_hz, gain=1.0, fs=C.FS, stuff=C.BTSC_DECIM, image_spacing=C.BTSC_RATE,
+               passband=180e3, atten=60.0):
     """Band-pass at the aural carrier that rebuilds the zero-stuffed FM signal.
 
-    Images of the zero-stuffed carrier are spaced 550.7 kHz apart, so the
-    stop band must begin before 550.7 - 180 = 370 kHz from the carrier."""
-    return _shifted_lowpass(carrier_hz, passband, stopband, atten, gain * C.BTSC_DECIM)
+    Images of the zero-stuffed carrier are ``image_spacing`` apart (550.7 kHz
+    at 4fsc), so the stop band starts at image_spacing - passband."""
+    return _shifted_lowpass(carrier_hz, passband, image_spacing - passband, atten,
+                            gain * stuff, fs)
+
+
+def is_native_rate(rate):
+    """True for 4fsc, including integer approximations like 14318182 Hz."""
+    return abs(rate - C.FS) < 1.0
 
 
 def resample_ratio(rate):
     """(interp, decim) taking 4fsc (= 315/22 MHz exactly) to ``rate``."""
+    if is_native_rate(rate):
+        return 1, 1
     r = Fraction(int(round(rate)) * 22, 315_000_000)
     if abs(float(r) * C.FS - rate) > 1e-3:
         raise ValueError("sample rate must be a whole number of Hz")
     return r.numerator, r.denominator
 
 
-def resampler_taps(interp, out_rate, f_lo, f_hi, atten=60.0):
-    """Low-pass for 4fsc -> out_rate that keeps f_lo..f_hi (the channel) and
-    rejects every image that would alias onto it."""
-    edge = max(abs(f_lo), abs(f_hi)) + 0.1e6
-    stop = min(C.FS, out_rate) - edge
-    if stop <= edge + 0.2e6:
-        raise ValueError("output rate %.3f Msps is too low for this channel placement"
-                         % (out_rate / 1e6))
-    rate = C.FS * interp
-    numtaps, beta = signal.kaiserord(atten, (stop - edge) / (rate / 2.0))
-    h = signal.firwin(numtaps, (edge + stop) / 2.0, window=("kaiser", beta), fs=rate)
-    return (h * interp).astype(np.float32)
+def envelope_resampler_taps(interp, out_rate, video_bw=4.3e6, atten=60.0):
+    """Low-pass for the real video envelope, 4fsc -> out_rate.
+
+    Only 0..4.3 MHz matters (the VSB filter after it keeps -0.75..+4.2 MHz
+    around the carrier); everything that could alias back into that band is
+    rejected."""
+    stop = min(C.FS, out_rate) - video_bw
+    if stop <= video_bw + 0.3e6:
+        raise ValueError("output rate %.3f Msps is too low for NTSC video" % (out_rate / 1e6))
+    return _lowpass(video_bw, stop, atten, interp, C.FS * interp)
+
+
+def aural_plan(rate):
+    """How the aural carrier reaches ``rate``.
+
+    Returns (stuff, composite_rate, (interp, decim)): the BTSC composite is
+    resampled by interp/decim to composite_rate = rate / stuff, FM
+    modulated there and zero-stuffed by ``stuff``.  At 4fsc that is
+    (26, 550.7 kHz, (1, 1)); at 15 Msps (27, 555.6 kHz, (572, 567))."""
+    if is_native_rate(rate):
+        return C.BTSC_DECIM, C.BTSC_RATE, (1, 1)
+    centre = int(round(rate / C.BTSC_RATE))
+    best = None
+    for n in range(max(2, centre - 2), centre + 3):
+        fb = rate / n
+        if fb < 500e3:              # the FM band (+/- 180 kHz) needs room between images
+            continue
+        r = Fraction(int(round(rate)) * C.BTSC_DECIM * 22, n * 315_000_000)
+        if best is None or r.numerator < best[2][0]:
+            best = (n, fb, (r.numerator, r.denominator))
+    if best is None:
+        raise ValueError("output rate %.3f Msps is too low" % (rate / 1e6))
+    return best
+
+
+def composite_resampler_taps(interp, out_rate, audio_bw=110e3, atten=60.0):
+    """Low-pass for the BTSC composite (deviation, up to ~100 kHz with SAP)."""
+    stop = min(C.BTSC_RATE, out_rate) - audio_bw
+    return _lowpass(audio_bw, stop, atten, interp, C.BTSC_RATE * interp)
 
 
 class tv_source(gr.hier_block2):
@@ -108,7 +156,7 @@ class tv_source(gr.hier_block2):
                  sap_gain_db=0.0, setup=7.5, white_clip=110.0, aspect="pad",
                  interlaced=True, loop=False, live=None, listen=False, latency=0.3,
                  idle="bars", ffmpeg="ffmpeg", input_args="", start=None, reader=None,
-                 transport="auto", samp_rate=None):
+                 transport="auto", samp_rate=None, buffer=0.15, priority="normal"):
         gr.hier_block2.__init__(self, "tv_source", gr.io_signature(0, 0, 0),
                                 gr.io_signature(1, 1, gr.sizeof_gr_complex))
         f_vis = channel_offset - C.VISUAL_TO_CENTER
@@ -119,11 +167,18 @@ class tv_source(gr.hier_block2):
                                  channel_offset / 1e6, C.FS / 1e6,
                                  (-C.FS / 2 + 1.4e6 + C.VISUAL_TO_CENTER) / 1e6,
                                  (C.FS / 2 - 0.4e6 - C.AURAL_OFFSET + C.VISUAL_TO_CENTER) / 1e6))
-        self.samp_rate = float(samp_rate or C.FS)
-        resample = abs(self.samp_rate - C.FS) > 1e-3
+        rate = float(samp_rate or C.FS)
+        if is_native_rate(rate):
+            rate = C.FS
+        self.samp_rate = rate
+        if max(abs(f_vis - 1.3e6), abs(f_aur + 0.25e6)) > rate / 2 - 0.1e6:
+            raise ValueError("output rate %.3f Msps is too low for this channel placement; "
+                             "use a higher rate or --offset 0" % (rate / 1e6))
+        resample = not is_native_rate(rate)
         if resample:
-            interp, decim = resample_ratio(self.samp_rate)
-            rs_taps = resampler_taps(interp, self.samp_rate, f_vis - 1.3e6, f_aur + 0.25e6)
+            v_interp, v_decim = resample_ratio(rate)
+            v_taps = envelope_resampler_taps(v_interp, rate)
+        stuff, comp_rate, (a_interp, a_decim) = aural_plan(rate)
         if isinstance(input_args, str):
             input_args = shlex.split(input_args)
         if sap == "":
@@ -133,7 +188,7 @@ class tv_source(gr.hier_block2):
         self.reader = reader or MediaReader(
             input, live=live, loop=loop, listen=listen, aspect=aspect, interlaced=interlaced,
             audio=audio, sap=sap, sap_track=sap_track, latency=latency, ffmpeg=ffmpeg,
-            input_args=input_args, start=start)
+            input_args=input_args, start=start, priority=priority)
         aural_amp = 10 ** (aural_db / 20.0)
         scale = level / (1.0 + aural_amp)
         if transport == "auto":
@@ -144,11 +199,15 @@ class tv_source(gr.hier_block2):
         self.video = VideoFeeder(self.reader, setup=setup, white_clip=white_clip, idle=idle,
                                  transport=transport)
         self.video_src = self.video.gr_source()
+        vchain = [self.video_src]
+        if resample:
+            self.v_resampler = filter.rational_resampler_fff(v_interp, v_decim, v_taps.tolist())
+            vchain.append(self.v_resampler)
         self.f2c = blocks.float_to_complex(1)
-        self.vsb = filter.fft_filter_ccc(1, vsb_taps(scale).tolist())
-        vchain = [self.video_src, self.f2c, self.vsb]
+        self.vsb = filter.fft_filter_ccc(1, vsb_taps(scale, fs=rate).tolist())
+        vchain += [self.f2c, self.vsb]
         if abs(f_vis) > 0.5:
-            self.vrot = blocks.rotator_cc(2 * np.pi * f_vis / C.FS)
+            self.vrot = blocks.rotator_cc(2 * np.pi * f_vis / rate)
             vchain.append(self.vrot)
 
         # -- sound -----------------------------------------------------
@@ -156,24 +215,29 @@ class tv_source(gr.hier_block2):
                                  sap_gain_db=sap_gain_db, transport=transport)
         self.audio_src = self.audio.gr_source()
         self.lifecycle = lifecycle_sink(self.reader, [self.video, self.audio])
-        f_alias = f_aur - round(f_aur / C.BTSC_RATE) * C.BTSC_RATE
+        achain = [self.audio_src]
+        if (a_interp, a_decim) != (1, 1):
+            self.a_resampler = filter.rational_resampler_fff(
+                a_interp, a_decim, composite_resampler_taps(a_interp, comp_rate).tolist())
+            achain.append(self.a_resampler)
+        f_alias = f_aur - round(f_aur / comp_rate) * comp_rate
         self.carrier = blocks.add_const_ff(f_alias)
-        self.fm = analog.frequency_modulator_fc(2 * np.pi / C.BTSC_RATE)
-        self.stuff = blocks.vector_insert_c([0j] * (C.BTSC_DECIM - 1), C.BTSC_DECIM, 0)
-        self.aural_bpf = filter.fft_filter_ccc(1, aural_taps(f_aur, aural_amp * scale).tolist())
+        self.fm = analog.frequency_modulator_fc(2 * np.pi / comp_rate)
+        self.stuff = blocks.vector_insert_c([0j] * (stuff - 1), stuff, 0)
+        self.aural_bpf = filter.fft_filter_ccc(1, aural_taps(
+            f_aur, aural_amp * scale, fs=rate, stuff=stuff, image_spacing=comp_rate).tolist())
+        achain += [self.carrier, self.fm, self.stuff, self.aural_bpf]
 
         self.add = blocks.add_cc()
+        if buffer and buffer > 0:
+            # a deep last buffer lets the SDR ride through short CPU stalls
+            self.add.set_min_output_buffer(int(buffer * rate))
         self.connect(*vchain, (self.add, 0))
-        self.connect(self.audio_src, self.carrier, self.fm, self.stuff, self.aural_bpf,
-                     (self.add, 1))
+        self.connect(*achain, (self.add, 1))
         # the lifecycle block only needs a trickle of samples
         self.trickle = blocks.keep_one_in_n(gr.sizeof_float, 8192)
         self.connect(self.audio_src, self.trickle, self.lifecycle)
-        if resample:
-            self.resampler = filter.rational_resampler_ccf(interp, decim, rs_taps.tolist())
-            self.connect(self.add, self.resampler, self)
-        else:
-            self.connect(self.add, self)
+        self.connect(self.add, self)
 
     @property
     def frames_out(self):

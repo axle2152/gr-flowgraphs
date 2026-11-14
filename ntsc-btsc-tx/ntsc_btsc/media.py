@@ -48,6 +48,30 @@ TEST_INPUTS = {
 }
 
 
+_LIBRTMP = {}
+
+
+def ffmpeg_uses_librtmp(ffmpeg="ffmpeg"):
+    """True if this ffmpeg was built with librtmp (MSYS2's is).  librtmp
+    replaces ffmpeg's own RTMP code and can't act as a server (-listen)."""
+    if ffmpeg not in _LIBRTMP:
+        try:
+            out = subprocess.run([ffmpeg, "-hide_banner", "-buildconf"], capture_output=True,
+                                 timeout=20).stdout
+            _LIBRTMP[ffmpeg] = b"--enable-librtmp" in out
+        except Exception:
+            _LIBRTMP[ffmpeg] = False
+    return _LIBRTMP[ffmpeg]
+
+
+LIBRTMP_HELP = (
+    "this ffmpeg is built with librtmp (MSYS2's is), which can't be an RTMP server, so "
+    "--listen can't work with rtmp://.  Use SRT instead - it's built in and OBS supports it:\n"
+    "  transmitter: -i \"srt://0.0.0.0:9000?mode=listener\"   (no --listen)\n"
+    "  OBS server:  srt://<this PC>:9000?mode=caller        (stream key empty)\n"
+    "or run an RTMP server such as MediaMTX and pull from it without --listen.")
+
+
 def is_live_url(url):
     scheme = urlparse(url).scheme.lower()
     return scheme in LIVE_SCHEMES
@@ -168,7 +192,8 @@ class SampleFifo:
 class MediaReader:
     def __init__(self, url, *, live=None, loop=False, listen=False, aspect="pad",
                  interlaced=True, audio=True, sap=None, sap_track=None, latency=0.3,
-                 ffmpeg="ffmpeg", input_args=None, loglevel="warning", start=None):
+                 ffmpeg="ffmpeg", input_args=None, loglevel="warning", start=None,
+                 priority="normal"):
         self.url = url
         self.test = url in TEST_INPUTS
         self.live = is_live_url(url) or listen if live is None else bool(live)
@@ -178,6 +203,10 @@ class MediaReader:
         self.interlaced = interlaced
         self.latency = float(latency)
         self.ffmpeg = shutil.which(ffmpeg) or ffmpeg
+        if (listen and urlparse(url).scheme.lower() in ("rtmp", "rtmps")
+                and ffmpeg_uses_librtmp(self.ffmpeg)):
+            raise ValueError(LIBRTMP_HELP)
+        self.priority = priority
         self.input_args = list(input_args or [])
         self.loglevel = loglevel
         self.start_time = start
@@ -383,7 +412,11 @@ class MediaReader:
                 listeners[name] = ls
             cmd = self.build_command({n: ls.getsockname()[1] for n, ls in listeners.items()})
             log.debug("running: %s", " ".join(cmd))
-            p = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, bufsize=0)
+            flags = 0
+            if self.priority == "high" and hasattr(subprocess, "HIGH_PRIORITY_CLASS"):
+                flags = subprocess.HIGH_PRIORITY_CLASS     # Windows doesn't inherit it
+            p = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                 bufsize=0, creationflags=flags)
             self._procs = [p]
             readers = [threading.Thread(target=self._read_video, args=(p.stdout,), daemon=True)]
             fifos = {"audio": self.audio_fifo, "sap": self.sap_fifo}

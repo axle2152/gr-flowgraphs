@@ -48,6 +48,15 @@ Then run everything below from the same UCRT64 shell (`python` and
 `python3` both work there). If Ctrl-C doesn't stop the transmitter in the
 MSYS2 terminal, run it from Windows Terminal instead.
 
+Two things are different on Windows:
+
+- **Use SRT, not RTMP, for OBS.** MSYS2's ffmpeg is built with librtmp, which
+  can't act as an RTMP server, so `--listen` with `rtmp://` won't work (the
+  transmitter tells you so). SRT works out of the box; see
+  [Setting up OBS](#setting-up-obs).
+- **Add `--priority high`** so background programs don't starve the
+  transmitter.
+
 ### Linux (Ubuntu/Debian)
 
 ```bash
@@ -104,8 +113,8 @@ Anything ffmpeg can open works as `-i`:
 | Input | Command |
 |---|---|
 | File (any format) | `-i movie.mkv`, add `--loop` to repeat, `--start 1:23` to seek |
-| OBS → us as RTMP server | `-i rtmp://0.0.0.0:1935/live/obs --listen` |
-| OBS → SRT (lowest latency) | `-i "srt://0.0.0.0:9000?mode=listener"` |
+| OBS → SRT (lowest latency; use this on MSYS2) | `-i "srt://0.0.0.0:9000?mode=listener"` |
+| OBS → us as RTMP server (not with MSYS2's ffmpeg) | `-i rtmp://0.0.0.0:1935/live/obs --listen` |
 | RTSP server (e.g. MediaMTX) | `-i rtsp://127.0.0.1:8554/live` |
 | Something pushes RTSP to us | `-i rtsp://0.0.0.0:8554/live --listen` |
 | MPEG-TS over UDP | `-i udp://127.0.0.1:1234` |
@@ -127,20 +136,32 @@ SDR, and drops or repeats when it has to.
 
 ### Setting up OBS
 
-**RTMP (simplest):**
+**SRT (recommended, and the one to use on MSYS2):**
 
-1. Start the transmitter with `-i rtmp://0.0.0.0:1935/live/obs --listen`.
-2. In OBS, go to Settings → Stream. Choose Service **Custom**, Server
-   `rtmp://127.0.0.1:1935/live`, Stream Key `obs`.
+1. Start the transmitter:
+
+   ```bash
+   python3 -m ntsc_btsc -i "srt://0.0.0.0:9000?mode=listener" -c 3
+   ```
+
+   No `--listen` is needed; `mode=listener` does that. Keep the quotes,
+   because of the `?`.
+2. In OBS, go to Settings → Stream. Choose Service **Custom**, set Server to
+   `srt://127.0.0.1:9000?mode=caller` (or this PC's IP address if OBS runs on
+   another machine), and leave Stream Key empty.
 3. Click **Start Streaming**.
 
 The transmitter shows colour bars until OBS connects, and again a couple of
-seconds after OBS stops. It is then ready for the next connection.
+seconds after OBS stops. It is then ready for the next connection. If OBS is
+on another machine, allow ffmpeg through the firewall when Windows asks.
 
-**SRT:** use Server `srt://127.0.0.1:9000?mode=caller` with no stream key, and
-start the transmitter with `-i "srt://0.0.0.0:9000?mode=listener"`. SRT needs
-an OBS build with SRT support, which is standard on Windows, macOS and most
-Linux packages.
+**RTMP (Linux and other ffmpeg builds without librtmp):**
+
+1. Start the transmitter with `-i rtmp://0.0.0.0:1935/live/obs --listen`.
+2. In OBS, set Server to `rtmp://127.0.0.1:1935/live` and Stream Key to `obs`.
+3. Click **Start Streaming**.
+
+If the transmitter says its ffmpeg is built with librtmp, use SRT.
 
 **RTSP:** OBS can't serve RTSP itself. Either stream RTMP to
 [MediaMTX](https://github.com/bluenviron/mediamtx) and pull
@@ -171,18 +192,26 @@ Recommended OBS settings:
   SoapySDR radio, and `--sink osmosdr` forces gr-osmosdr.
 - `--sink file -o out.cf32` writes an IQ recording (`--format cs8` is the
   HackRF format). For HackRF playback see [sample rates](#sample-rates).
+- `--priority high` raises the process priority (the Windows high priority
+  class, or real-time scheduling on Linux, which needs root or an rtprio
+  limit). It's worth using on a busy PC.
+- `--buffer` (seconds, default 0.15) is the extra buffering in front of the
+  SDR, so short CPU stalls don't reach the radio. It adds the same latency to
+  picture and sound.
 
 ### Sample rates
 
 The signal is generated at 4 × fsc = **14.318182 Msps**, which every timing
-relationship in NTSC is built on. `--samp-rate` resamples the finished signal
-exactly (a rational resampler), so line rate, pilot and intercarrier stay
-locked.
+relationship in NTSC is built on. `--samp-rate` gives another output rate
+through exact rational resampling, so line rate, pilot and intercarrier stay
+locked. To keep the cost down, only the real video envelope is resampled at
+full rate (before the VSB filter). The sound is generated directly at the
+output rate, with only its low-rate composite resampled.
 
 The HackRF's SoapySDR driver only accepts whole-MHz rates, so with
 `--sink soapy` and a HackRF the default output is **15 Msps**. That's the
 cheapest whole-MHz rate: exactly 22/21 × 4fsc. Other choices such as
-`--samp-rate 16e6` or `20e6` work too, at some CPU cost. gr-osmosdr, PlutoSDR,
+`--samp-rate 16e6` or `20e6` work too, at a little more CPU cost. gr-osmosdr, PlutoSDR,
 LimeSDR and IQ files use 14.318182 Msps unless you say otherwise.
 
 For HackRF playback of a recording, write it at a whole-MHz rate:
@@ -255,8 +284,8 @@ take `-c` (channel) and `-g` (gain), and the file one `-o` (output file).
              └────────────────────────────────────┘  loopback    ▼                  ▼
                                                      TCP   BTSC encoder ──pipe──▶ GNU Radio (C++ blocks only)
                                                            (numpy thread)
-GNU Radio:  envelope ─▶ float→complex ─▶ VSB FIR (-0.75/+4.2 MHz) ────────────────┐
-            deviation ─▶ +carrier alias ─▶ FM ─▶ zero-stuff x26 ─▶ band-pass ──────┴─▶ + ─▶ [resample] ─▶ SDR
+GNU Radio:  envelope ─▶ [resample] ─▶ float→complex ─▶ VSB FIR (-0.75/+4.2 MHz) ───┐
+            deviation ─▶ [resample] ─▶ +carrier alias ─▶ FM ─▶ zero-stuff ─▶ band-pass ┴─▶ + ─▶ buffer ─▶ SDR
 ```
 
 Audio reaches Python over loopback TCP rather than extra pipes. That keeps it
@@ -317,8 +346,8 @@ chain unless noted.
 | Pilot deviation | 5000 Hz | 5.0 ± 0.5 kHz |
 | Blanking / sync tip | 0.748–0.749 | 0.75 |
 | 75 % colour bars after RF round trip | within 1.6 % RGB | — |
-| Speed (4-vCPU 2.1 GHz cloud VM, null sink), 14.318 Msps | 1.9× real time | ≥ 1× |
-| Same, 15 Msps output (resampled) | 1.3× real time | ≥ 1× |
+| Speed, 4-vCPU 2.1 GHz cloud VM, Linux: 14.318 Msps / 15 Msps | 2.4× / 2.0× real time | ≥ 1× |
+| Speed, i7-6700K, Windows 10/11 + MSYS2: 14.318 Msps | 1.5× real time | ≥ 1× |
 
 Separation stays high in steady state. During the first ~2 ms after an abrupt
 onset, the compressor overshoots into its overmodulation clipper. That is
@@ -330,17 +359,26 @@ inherent to dbx-TV, and hardware encoders behave the same way.
 python3 -m pytest
 ```
 
-There are 49 tests. They cover the OET-60 calibration points, separation,
+There are 56 tests. They cover the OET-60 calibration points, separation,
 pilot phase, SAP, SMPTE 170M timing and levels, a colour round trip, the
 channel tables, and end-to-end GNU Radio runs. The tests that need GNU Radio
 or ffmpeg are skipped if those aren't installed.
 
 ## Troubleshooting
 
-- **`U` printed by gr-osmosdr (underruns):** the CPU can't keep up. Close
-  other programs and check that the fps in the status line stays at 29.97. To
-  see what your machine manages, benchmark it with
-  `--sink null --duration 30`; that figure must be comfortably above 29.97.
+- **Picture glitches and audio pops.** First work out which of two causes it
+  is:
+  - **`U` printed by the SDR driver** means the CPU couldn't keep up for a
+    moment. Use `--priority high`, raise `--buffer` (e.g. `0.3`), and close
+    background programs. If OBS runs on the same PC, use its hardware
+    encoder (NVENC/QuickSync/AMF) and a 640×480 or 854×480 output.
+  - **The `underruns` count in the status line rising** means the live stream
+    arrived late, not the CPU. Use a bigger jitter buffer, e.g.
+    `--latency 0.5`.
+
+  To see what your machine manages, benchmark it with
+  `--sink null --duration 30` (add `--samp-rate 15e6` for the HackRF via
+  Soapy). The fps must be comfortably above 29.97.
 - **No stereo indicator on the TV:** make sure you didn't pass `--mono`, and
   that the aural carrier isn't attenuated (try `--aural-level -7`). Some sets
   only show stereo with a strong, clean signal.
@@ -357,16 +395,17 @@ or ffmpeg are skipped if those aren't installed.
 
 - NTSC-M (and NTSC-J levels) only. No PAL, SECAM, closed captions or
   teletext yet.
-- Output rates other than 14.318 Msps go through a resampler, which costs
-  CPU. 15 Msps is the cheapest whole-MHz rate.
+- Output rates other than 14.318 Msps cost some CPU for resampling (about
+  15–20 % fewer fps at 15 Msps).
 - Audio is resampled by ffmpeg to 550 699 Hz, 0.55 ppm from the exact
   composite rate: about 2 ms of A/V drift per hour on a file. Live inputs are
   resynchronised continuously.
-- Developed and tested on Linux with GNU Radio 3.10 and ffmpeg 6.1. MSYS2
-  (GNU Radio 3.10.12, Python 3.14, ffmpeg 9) is supported by design but
-  hasn't been run on Windows yet: the Windows-specific pipe code and the
-  Python-block fallback are exercised on Linux, but not the real thing.
-  macOS should work.
+- Developed on Linux (GNU Radio 3.10.9, ffmpeg 6.1). Also run on Windows with
+  MSYS2 UCRT64 (GNU Radio 3.10.12, Python 3.14, ffmpeg 9): the IQ verifies
+  identically there, and OBS streaming over SRT to a HackRF works. macOS
+  should work but hasn't been tried.
+- `--listen` with RTMP needs an ffmpeg without librtmp, so it doesn't work on
+  MSYS2; use SRT there.
 
 ## Legal and safety
 
