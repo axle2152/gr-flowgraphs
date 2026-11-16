@@ -1,0 +1,698 @@
+options:
+  parameters:
+    author: POWER-FM / KK4EKN
+    catch_exceptions: 'True'
+    category: '[GRC Hier Blocks]'
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: 'Crosby compatible FM stereo: L+R at 50% on the main channel, L-R
+      on a 50 kHz FM subcarrier (+/-25 kHz deviation, 50% injection). No pilot. Pre-emphasis
+      is done upstream in Stereo Tool.'
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: qt_gui
+    hier_block_src_path: '.:'
+    id: crosby_tx
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: Crosby FM-FM Stereo Transmitter (1958 multiplex)
+    window_size: (1000,1000)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 8]
+    rotation: 0
+    state: enabled
+
+blocks:
+- name: audio_bw
+  id: variable
+  parameters:
+    comment: Audio LPF -6 dB point
+    value: 15.5e3
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [780, 8]
+    rotation: 0
+    state: enabled
+- name: audio_rate
+  id: variable
+  parameters:
+    comment: Stereo Tool / audio device rate
+    value: '192000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [180, 100]
+    rotation: 0
+    state: enabled
+- name: audio_taps
+  id: variable
+  parameters:
+    comment: 15 kHz brickwall so L+R stays clear of the subcarrier
+    value: firdes.low_pass(1.0, mpx_rate, audio_bw, audio_width)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [660, 100]
+    rotation: 0
+    state: enabled
+- name: audio_width
+  id: variable
+  parameters:
+    comment: Audio LPF transition (stopband from ~16.25 kHz)
+    value: 1.5e3
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [900, 8]
+    rotation: 0
+    state: enabled
+- name: hackrf_vga
+  id: variable
+  parameters:
+    comment: HackRF TX VGA gain, set to your usual value
+    value: '16'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [540, 100]
+    rotation: 0
+    state: enabled
+- name: main_dev
+  id: variable
+  parameters:
+    comment: Main carrier deviation at composite = 1.0
+    value: 75e3
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [660, 8]
+    rotation: 0
+    state: enabled
+- name: main_inj
+  id: variable
+  parameters:
+    comment: 'L+R injection: 50% in stereo (the Crosby 6 dB mono penalty), 100% in
+      mono'
+    value: 0.5 if stereo_tx else 1.0
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1300, 100]
+    rotation: 0
+    state: enabled
+- name: mpx_rate
+  id: variable
+  parameters:
+    comment: Composite (MPX) rate for all Crosby DSP = the audio rate (needs 192k for
+      the 50 kHz subcarrier)
+    value: audio_rate
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [300, 8]
+    rotation: 0
+    state: enabled
+- name: rf_rate
+  id: variable
+  parameters:
+    comment: HackRF rate - the Soapy HackRF sink only takes whole MHz (2, 3, 4 ... Msps)
+    value: '2000000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [300, 100]
+    rotation: 0
+    state: enabled
+- name: stereo_tx
+  id: variable_qtgui_check_box
+  parameters:
+    comment: ''
+    'false': '0'
+    gui_hint: 0,0,1,1
+    label: Stereo (Crosby subcarrier on)
+    'true': '1'
+    type: int
+    value: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1300, 8]
+    rotation: 0
+    state: enabled
+- name: sub_bw
+  id: variable
+  parameters:
+    comment: 'Subcarrier band-limit half-width (-6 dB): 19-81 kHz'
+    value: 31e3
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1020, 8]
+    rotation: 0
+    state: enabled
+- name: sub_dev
+  id: variable
+  parameters:
+    comment: 'Subcarrier deviation for (L-R)/2 = 1 (1958 spec: 25 kc)'
+    value: 25e3
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [540, 8]
+    rotation: 0
+    state: enabled
+- name: sub_freq
+  id: variable
+  parameters:
+    comment: 'Crosby L-R subcarrier center (1958 spec: 50 kc)'
+    value: 50e3
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [420, 8]
+    rotation: 0
+    state: enabled
+- name: sub_inj
+  id: variable
+  parameters:
+    comment: 'Subcarrier injection: 50% in stereo'
+    value: 0.5 if stereo_tx else 0.0
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1440, 100]
+    rotation: 0
+    state: enabled
+- name: sub_width
+  id: variable
+  parameters:
+    comment: 'Subcarrier filter transition: stop below 17 kHz / above 83 kHz'
+    value: 4e3
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1140, 8]
+    rotation: 0
+    state: enabled
+- name: tx_delay
+  id: variable
+  parameters:
+    comment: Group delay of tx_sub_taps; L+R is delayed by this so both paths line
+      up
+    value: (len(tx_sub_taps) - 1) // 2
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1140, 100]
+    rotation: 0
+    state: enabled
+- name: tx_freq
+  id: variable
+  parameters:
+    comment: ''
+    value: 90.5e6
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [420, 100]
+    rotation: 0
+    state: enabled
+- name: tx_sub_taps
+  id: variable
+  parameters:
+    comment: Band-limits the FM subcarrier at baseband so its lower sidebands stay
+      out of the mono channel
+    value: firdes.low_pass(1.0, mpx_rate, sub_bw, sub_width)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [900, 100]
+    rotation: 0
+    state: enabled
+- name: audio_in
+  id: audio_source
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    device_name: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_outputs: '2'
+    ok_to_block: 'True'
+    samp_rate: audio_rate
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [16, 300]
+    rotation: 0
+    state: enabled
+- name: diff_gain
+  id: blocks_multiply_const_vxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: '(L-R)/2: +/-1 = full subcarrier deviation'
+    const: '0.5'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [600, 444]
+    rotation: 0
+    state: enabled
+- name: diff_lr
+  id: blocks_sub_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [440, 440]
+    rotation: 0
+    state: enabled
+- name: hackrf
+  id: soapy_hackrf_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    amp: 'False'
+    bandwidth: '0'
+    center_freq: tx_freq
+    comment: ''
+    dev_args: ''
+    samp_rate: rf_rate
+    type: fc32
+    vga: hackrf_vga
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2120, 300]
+    rotation: 0
+    state: enabled
+- name: import_0
+  id: import
+  parameters:
+    alias: ''
+    comment: ''
+    imports: import math
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [180, 8]
+    rotation: 0
+    state: enabled
+- name: main_fm
+  id: analog_frequency_modulator_fc
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    sensitivity: 2 * math.pi * main_dev / rf_rate
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1900, 332]
+    rotation: 0
+    state: enabled
+- name: mpx_fft
+  id: qtgui_freq_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    average: '0.2'
+    axislabels: 'True'
+    bw: mpx_rate
+    color1: '"blue"'
+    color10: '"dark blue"'
+    color2: '"red"'
+    color3: '"green"'
+    color4: '"black"'
+    color5: '"cyan"'
+    color6: '"magenta"'
+    color7: '"yellow"'
+    color8: '"dark red"'
+    color9: '"dark green"'
+    comment: ''
+    ctrlpanel: 'False'
+    fc: '0'
+    fftsize: '4096'
+    freqhalf: 'True'
+    grid: 'True'
+    gui_hint: 1,0,1,1
+    label: Relative Gain
+    label1: ''
+    label10: ''''''
+    label2: ''''''
+    label3: ''''''
+    label4: ''''''
+    label5: ''''''
+    label6: ''''''
+    label7: ''''''
+    label8: ''''''
+    label9: ''''''
+    legend: 'True'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    name: '"Crosby composite (MPX)"'
+    nconnections: '1'
+    norm_window: 'False'
+    showports: 'False'
+    tr_chan: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_tag: '""'
+    type: float
+    units: dB
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    wintype: window.WIN_BLACKMAN_hARRIS
+    ymax: '0'
+    ymin: '-110'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1700, 440]
+    rotation: 0
+    state: enabled
+- name: mpx_sum
+  id: blocks_add_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'Crosby composite: peak 1.0 = 75 kHz'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1540, 330]
+    rotation: 0
+    state: enabled
+- name: sub_fm
+  id: analog_frequency_modulator_fc
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: FM at baseband (DC), +/-25 kHz
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    sensitivity: 2 * math.pi * sub_dev / mpx_rate
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [780, 448]
+    rotation: 0
+    state: enabled
+- name: sub_limit
+  id: fir_filter_xxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'Band-limit subcarrier: +/-31 kHz around center'
+    decim: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_delay: '0'
+    taps: tx_sub_taps
+    type: ccf
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1000, 440]
+    rotation: 0
+    state: enabled
+- name: sub_lo
+  id: analog_sig_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    amp: sub_inj
+    comment: 50 kHz LO, amplitude = injection
+    freq: sub_freq
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: '0'
+    phase: '0'
+    samp_rate: mpx_rate
+    showports: 'False'
+    type: complex
+    waveform: analog.GR_COS_WAVE
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1000, 540]
+    rotation: 0
+    state: enabled
+- name: sub_real
+  id: blocks_complex_to_real
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1360, 464]
+    rotation: 0
+    state: enabled
+- name: sub_shift
+  id: blocks_multiply_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1220, 456]
+    rotation: 0
+    state: enabled
+- name: sum_delay
+  id: blocks_delay
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Matches the subcarrier band-limit filter delay
+    delay: tx_delay
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_ports: '1'
+    showports: 'False'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [800, 240]
+    rotation: 0
+    state: enabled
+- name: sum_gain
+  id: blocks_multiply_const_vxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: (L+R) scaled to main_inj of full deviation
+    const: main_inj / 2
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [600, 244]
+    rotation: 0
+    state: enabled
+- name: sum_lr
+  id: blocks_add_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [440, 240]
+    rotation: 0
+    state: enabled
+- name: lpf_l
+  id: fir_filter_xxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 15 kHz LPF (left)
+    decim: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_delay: '0'
+    taps: audio_taps
+    type: fff
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [200, 230]
+    rotation: 0
+    state: enabled
+- name: lpf_r
+  id: fir_filter_xxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 15 kHz LPF (right)
+    decim: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_delay: '0'
+    taps: audio_taps
+    type: fff
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [200, 380]
+    rotation: 0
+    state: enabled
+- name: up_rf
+  id: rational_resampler_xxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: MPX -> HackRF rate (192k -> 2M = 125/12), ratio worked out from the rate
+      variables
+    decim: int(mpx_rate // math.gcd(int(rf_rate), int(mpx_rate)))
+    fbw: '0'
+    interp: int(rf_rate // math.gcd(int(rf_rate), int(mpx_rate)))
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    taps: '[]'
+    type: fff
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1700, 316]
+    rotation: 0
+    state: enabled
+
+connections:
+- [audio_in, '0', lpf_l, '0']
+- [audio_in, '1', lpf_r, '0']
+- [diff_gain, '0', sub_fm, '0']
+- [diff_lr, '0', diff_gain, '0']
+- [main_fm, '0', hackrf, '0']
+- [mpx_sum, '0', mpx_fft, '0']
+- [mpx_sum, '0', up_rf, '0']
+- [sub_fm, '0', sub_limit, '0']
+- [sub_limit, '0', sub_shift, '0']
+- [sub_lo, '0', sub_shift, '1']
+- [sub_real, '0', mpx_sum, '1']
+- [sub_shift, '0', sub_real, '0']
+- [sum_delay, '0', mpx_sum, '0']
+- [sum_gain, '0', sum_delay, '0']
+- [sum_lr, '0', sum_gain, '0']
+- [lpf_l, '0', diff_lr, '0']
+- [lpf_l, '0', sum_lr, '0']
+- [lpf_r, '0', diff_lr, '1']
+- [lpf_r, '0', sum_lr, '1']
+- [up_rf, '0', main_fm, '0']
+
+metadata:
+  file_format: 1
+  grc_version: 3.10.10.0

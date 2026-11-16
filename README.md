@@ -6,6 +6,7 @@ folder with its own README.
 | Folder | What it is |
 |---|---|
 | [ntsc-btsc-tx](ntsc-btsc-tx/) | NTSC-M TV transmitter with BTSC stereo and SAP sound. Plays files or live streams from OBS (RTMP/SRT/RTSP/UDP) to a HackRF or other SDR. Includes GNU Radio Companion blocks. |
+| [crosby-fm-stereo](crosby-fm-stereo/) | Crosby FM-FM stereo transmitter (the 1958 multiplex system): L−R on a 50 kHz FM subcarrier, no pilot. GNU Radio Companion flowgraph for a HackRF. |
 
 ## Setting up GNU Radio
 
