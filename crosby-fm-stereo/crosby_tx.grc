@@ -463,6 +463,26 @@ blocks:
     coordinate: [1540, 330]
     rotation: 0
     state: enabled
+- name: sub_align
+  id: fir_filter_xxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'Half-sample delay on L-R: the FM modulator gives each sample''s frequency
+      to the half sample before it, so L-R would lead L+R by 2.6 us at 192k'
+    decim: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_delay: '0'
+    taps: '[0.5, 0.5]'
+    type: fff
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [600, 540]
+    rotation: 0
+    state: enabled
 - name: sub_fm
   id: analog_frequency_modulator_fc
   parameters:
@@ -674,11 +694,12 @@ blocks:
 connections:
 - [audio_in, '0', lpf_l, '0']
 - [audio_in, '1', lpf_r, '0']
-- [diff_gain, '0', sub_fm, '0']
+- [diff_gain, '0', sub_align, '0']
 - [diff_lr, '0', diff_gain, '0']
 - [main_fm, '0', hackrf, '0']
 - [mpx_sum, '0', mpx_fft, '0']
 - [mpx_sum, '0', up_rf, '0']
+- [sub_align, '0', sub_fm, '0']
 - [sub_fm, '0', sub_limit, '0']
 - [sub_limit, '0', sub_shift, '0']
 - [sub_lo, '0', sub_shift, '1']
