@@ -38,15 +38,21 @@ then run it. The GUI shows the composite spectrum. You should see L+R below
 ## Signal flow
 
 ```
-audio 192k ─▶ 15 kHz LPF (L, R) ─┬─▶ (L+R)/2 × main_inj ─▶ delay ─────────────────┐
-                                 └─▶ (L−R)/2 ─▶ FM ±25 kHz ─▶ band-limit ±31 kHz ─▶│
-                                                 × 50 kHz LO (× sub_inj) ─▶ real ─▶+─▶ composite
+audio 192k ─▶ 15 kHz LPF (L, R) ─┬─▶ (L+R)/2 × main_inj ─▶ delay ───────────────────────────────┐
+                                 └─▶ (L−R)/2 ─▶ ½-sample delay ─▶ FM ±25 kHz ─▶ band-limit ±31 kHz ─▶│
+                                                          × 50 kHz LO (× sub_inj) ─▶ real ─▶+─▶ composite
 composite 192k ─▶ resample to 2 Msps ─▶ FM ±75 kHz ─▶ HackRF (Soapy, whole-MHz rates only)
 ```
 
 The L+R path is delayed by the subcarrier filter's group delay so the two
 line up. The resampling ratio is worked out from `mpx_rate` and `rf_rate`, so
 changing either one keeps them consistent.
+
+The half-sample delay (`sub_align`, a two-tap average `[0.5, 0.5]`) is there
+because GNU Radio's Frequency Modulator gives each sample's frequency to the
+half sample before it, so L−R would otherwise lead L+R by half a sample:
+2.6 µs at 192 kHz. That costs stereo separation in any receiver that measures
+the subcarrier's frequency exactly, worst at high frequencies.
 
 ## Notes
 
@@ -59,8 +65,18 @@ changing either one keeps them consistent.
   distortion: about −46 dB THD+N on a 10 kHz left-only tone at 90 % level, in
   simulation. Without that limit the lower sideband would fall into the mono
   channel.
-- **Simulated results.** Fed 1 kHz left and 3 kHz right, the output decodes
-  with 60–72 dB of stereo separation at the correct levels.
+- **HackRF sample rate.** The Soapy HackRF sink only runs at whole-MHz rates
+  (2, 3, 4 Msps and so on). An earlier version of this flowgraph used
+  3.84 Msps, which doesn't work: the station came out at about half its
+  deviation. Keep `rf_rate` at a whole MHz; `up_rf` follows it.
+- **Simulated results.** This flowgraph, run with a tone in place of the sound
+  card and played through the
+  [all-mode-receiver](https://github.com/axle2152/all-mode-receiver)'s Crosby
+  add-on: subcarrier 50% at 50.0 kHz, and stereo separation of 60 dB at 1 kHz
+  and 45 dB at 10 kHz (a left-only tone at 90%). Without the half-sample
+  delay it was 42 dB and 22 dB. A receiver that runs at the same 192 kHz,
+  with the same half sample in its own discriminator, cancels it and hides
+  the difference.
 
 ## Legal
 
