@@ -320,7 +320,7 @@ blocks:
   parameters:
     affinity: ''
     alias: ''
-    amp: 'False'
+    amp: hackrf_amp
     bandwidth: '0'
     center_freq: tx_freq
     comment: ''
@@ -691,6 +691,55 @@ blocks:
     rotation: 0
     state: enabled
 
+- name: hackrf_amp
+  id: variable
+  parameters:
+    comment: HackRF +14 dB TX amplifier (leave off into coax)
+    value: 'False'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [640, 100]
+    rotation: 0
+    state: enabled
+- name: tx_check
+  id: snippet
+  parameters:
+    alias: ''
+    code: |-
+      # Warns before transmitting outside the FM band, at 608 MHz and up, or with the
+      # HackRF's gain high enough that an antenna would put it on the air. Warnings only.
+      import sys, time
+      _warn = []
+      if not 87.9e6 <= self.tx_freq <= 108.0e6:
+          _warn.append(f'{self.tx_freq / 1e6:.3f} MHz is outside the FM broadcast band (88-108 MHz).')
+      if 108e6 < self.tx_freq < 137e6:
+          _warn.append('108 to 137 MHz is aircraft navigation and voice radio.')
+      if self.tx_freq >= 608e6:
+          _warn.append('608 MHz and up is radio astronomy, cellular and public-safety radio.')
+      if self.hackrf_amp or self.hackrf_vga > 20:
+          _warn.append(f'HackRF gain {self.hackrf_vga} dB' + (' with the +14 dB amp.' if self.hackrf_amp else '.'))
+          _warn.append('With an antenna attached, that goes out over the air far stronger than')
+          _warn.append('an unlicensed FM transmitter may be (US Part 15: about 19 nW).')
+      if _warn:
+          print('!' * 76 + '\nWARNING\n' + '\n'.join(_warn)
+                + '\nTransmit only into a dummy load, or into coax with attenuators.\n' + '!' * 76,
+                file=sys.stderr, flush=True)
+          if sys.stderr.isatty():
+              for _n in range(5, 0, -1):
+                  print(f'Starting in {_n} s (Ctrl-C to stop)', file=sys.stderr, flush=True)
+                  time.sleep(1)
+    comment: Warns before transmitting (see the README's Legal section)
+    priority: '0'
+    section: main_after_init
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [760, 100]
+    rotation: 0
+    state: enabled
 connections:
 - [audio_in, '0', lpf_l, '0']
 - [audio_in, '1', lpf_r, '0']

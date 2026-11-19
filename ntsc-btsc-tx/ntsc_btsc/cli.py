@@ -270,6 +270,11 @@ def main(argv=None):
         args.samp_rate = 15e6 if hackrf_soapy else C.FS
     vis = resolve_frequency(args)
     lo = None if vis is None else vis + C.VISUAL_TO_CENTER - args.offset
+    if vis is not None and args.sink not in ("file", "null"):
+        from . import safety
+        hackrf = "hackrf" in (args.device or "hackrf")
+        name = f"Channel {args.channel}" if args.channel is not None and not args.freq else None
+        safety.warn(safety.report(vis, args.gain, args.amp, hackrf=hackrf, label=name))
 
     if args.priority == "high":
         how = raise_priority()
