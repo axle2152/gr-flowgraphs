@@ -163,6 +163,25 @@ blocks:
     - 200
     rotation: 0
     state: enabled
+- name: tx_check
+  id: snippet
+  parameters:
+    alias: ''
+    code: |-
+      # Warns before transmitting on a channel that is also used by safety services
+      # (608 MHz and up, the cable plans' aircraft and public-safety bands), or with the
+      # HackRF's gain high enough that an antenna would put it on the air. Warnings only.
+      from ntsc_btsc import safety
+      safety.warn(safety.report(self.visual, self.tx_gain, False, label=f'Channel {self.channel}'))
+    comment: Warns before transmitting (see the README's legal note)
+    priority: '0'
+    section: main_after_init
+  states:
+    coordinate:
+    - 640
+    - 8
+    rotation: 0
+    state: enabled
 connections:
 - - ntsc_btsc_tv_source_0
   - '0'

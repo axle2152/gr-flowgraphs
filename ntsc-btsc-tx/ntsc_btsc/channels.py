@@ -55,7 +55,13 @@ def visual_carrier(channel, band="broadcast"):
 
 
 def describe(band):
+    from .safety import channel_services
     rows = []
     for ch, f in sorted(BANDS[band].items()):
-        rows.append(f"{ch:4d}  visual {f / 1e6:9.4f} MHz   aural {(f + 4.5e6) / 1e6:9.4f} MHz")
+        row = f"{ch:4d}  visual {f / 1e6:9.4f} MHz   aural {(f + 4.5e6) / 1e6:9.4f} MHz"
+        also = channel_services(f)
+        if also:
+            row += "   ! also " + "; ".join(also)
+        rows.append(row)
+    rows.append("! = never over the air: those frequencies are also used by the services named")
     return "\n".join(rows)

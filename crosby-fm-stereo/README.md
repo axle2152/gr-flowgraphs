@@ -31,8 +31,11 @@ level and turns the subcarrier off.
 
 ## Running it
 
-Open `crosby_tx.grc` in GNU Radio Companion, set `tx_freq` and `hackrf_vga`,
-then run it. The GUI shows the composite spectrum. You should see L+R below
+Open `crosby_tx.grc` in GNU Radio Companion, set `tx_freq` and `hackrf_vga`
+(and `hackrf_amp`, the +14 dB amplifier, off unless you need it), then run
+it. Before it starts it warns you if the frequency is outside the FM band or
+the gain is high enough for an antenna to put it on the air (see
+[Legal](#legal)). The GUI shows the composite spectrum. You should see L+R below
 15 kHz and the subcarrier around 50 kHz.
 
 ## Signal flow
@@ -81,4 +84,13 @@ the subcarrier's frequency exactly, worst at high frequencies.
 ## Legal
 
 Transmit only into a dummy load or a shielded/cabled setup, or within your
-local low-power rules. The FM broadcast band is licensed spectrum.
+local low-power rules. The FM broadcast band is licensed spectrum, and the
+unlicensed allowance is tiny: US Part 15 allows 250 µV/m at 3 m, about
+19 nW, on a 200 kHz channel (Crosby's 20 dB bandwidth fits it, at about
+180 kHz). A HackRF isn't a certified Part 15 transmitter, and it can put out
+thousands of times that, so a HackRF on an antenna isn't a Part 15 station.
+
+The flowgraph warns you before it starts (a Python Snippet block, `tx_check`)
+when `tx_freq` is outside the FM band (108 to 137 MHz above it is aircraft
+radio), at 608 MHz and up, or when `hackrf_vga` is above 20 dB or
+`hackrf_amp` is on. It only warns; on a terminal it waits 5 seconds first.

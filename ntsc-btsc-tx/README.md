@@ -183,7 +183,9 @@ Recommended OBS settings:
 ## Choosing the channel and output
 
 - `-c N` picks a channel; `--band broadcast|cable|cable-irc|cable-hrc` picks
-  the plan. `--list-channels` prints the table.
+  the plan. `--list-channels` prints the table, with a `!` and the service
+  on every channel that must never go over the air (see the
+  [legal note](#legal-and-safety)).
 - `-f HZ` sets the visual carrier directly instead.
 - `--sink auto` is the default: gr-osmosdr (`-d hackrf=0`) if it's
   installed, otherwise SoapySDR (`-d driver=hackrf`). `-g` sets the HackRF TX
@@ -273,7 +275,9 @@ There are examples in `examples/`:
 - `tv_to_file.grc`: writes 10 s of IQ for the verifier.
 
 When run as generated scripts they take `-i` (input); the HackRF ones also
-take `-c` (channel) and `-g` (gain), and the file one `-o` (output file).
+take `-c` (channel) and `-g` (gain), and the file one `-o` (output file). The
+HackRF ones print the same warnings as the command line before they start
+(a Python Snippet block calling `ntsc_btsc.safety`).
 
 ## How it works
 
@@ -359,9 +363,10 @@ inherent to dbx-TV, and hardware encoders behave the same way.
 python3 -m pytest
 ```
 
-There are 56 tests. They cover the OET-60 calibration points, separation,
+There are 79 tests. They cover the OET-60 calibration points, separation,
 pilot phase, SAP, SMPTE 170M timing and levels, a colour round trip, the
-channel tables, and end-to-end GNU Radio runs. The tests that need GNU Radio
+channel tables, the warnings before transmitting, and end-to-end GNU Radio
+runs. The tests that need GNU Radio
 or ffmpeg are skipped if those aren't installed.
 
 ## Troubleshooting
@@ -415,6 +420,26 @@ Transmitting there without a licence is illegal in most countries. Connect
 the SDR to the TV with coax through attenuators (30–60 dB), keep the gain
 low, and never connect an antenna. You are responsible for staying within
 your local rules, such as FCC Part 15 in the US.
+
+Some channels are worse than others, because other services use them now:
+
+- Broadcast channels 37 to 83 (608 to 890 MHz): radio astronomy (37), 600 MHz
+  cellular (38–51), 700 MHz cellular and FirstNet public-safety radio (52–69),
+  800 MHz public-safety radio and cellular (70–83). The channel table still
+  lists them because older TVs tune them.
+- The cable plans, if sent over the air, land on aircraft radio and navigation
+  (cable 1, 14–16, 98 and 99), marine VHF and NOAA weather
+  (around 156–163 MHz), military aircraft radio (225–400 MHz), and police,
+  fire and EMS radio. On coax into a TV, as cable is meant to be, they're
+  fine.
+
+Before it starts, the transmitter warns you about those channels, and about a
+HackRF gain above 20 dB or its +14 dB amp, at which an antenna would put the
+picture on the air for some distance. On a terminal it waits 5 seconds
+(Ctrl-C stops it). It doesn't refuse: into coax, any channel and gain is
+your call. Files (`--sink file`) and `--sink null` transmit nothing, so they
+get no warning; the same rules apply when you play a file with
+`hackrf_transfer`.
 
 ## License
 
