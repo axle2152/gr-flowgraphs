@@ -7,11 +7,12 @@ folder with its own README.
 |---|---|
 | [ntsc-btsc-tx](ntsc-btsc-tx/) | NTSC-M TV transmitter with BTSC stereo and SAP sound. Plays files or live streams from OBS (RTMP/SRT/RTSP/UDP) to a HackRF or other SDR. Includes GNU Radio Companion blocks. |
 | [crosby-fm-stereo](crosby-fm-stereo/) | Crosby FM-FM stereo transmitter (the 1958 multiplex system): L−R on a 50 kHz FM subcarrier, no pilot. GNU Radio Companion flowgraph for a HackRF. |
+| [fm-multipath-sim](fm-multipath-sim/) | FM multipath / picket-fencing simulator with a CMA equalizer and stereo receiver, for testing channel equalization. Runs on a PC, no SDR needed. |
 
 ## Before you transmit
 
-These are transmitters. Test them into coax with attenuators (30-60 dB) or a
-dummy load, not an antenna. The FM and TV bands are licensed spectrum, and the
+ntsc-btsc-tx and crosby-fm-stereo are transmitters. Test them into coax with
+attenuators (30-60 dB) or a dummy load, not an antenna. The FM and TV bands are licensed spectrum, and the
 frequencies around them carry aircraft, marine, public-safety and cellular
 radio. TV channels 37 and up (608 MHz and up) are radio astronomy, cellular
 and public-safety radio now, whatever an old channel chart says.

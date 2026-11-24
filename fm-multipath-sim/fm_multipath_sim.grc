@@ -1,0 +1,1603 @@
+options:
+  parameters:
+    author: Mike
+    catch_exceptions: 'True'
+    category: '[GRC Hier Blocks]'
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: Multipath / picket-fencing simulator feeding an FM stereo receiver
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: qt_gui
+    hier_block_src_path: '.:'
+    id: fm_multipath_sim
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: FM Multipath / Picket-Fence Simulator
+    window_size: (1000,1000)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 8]
+    rotation: 0
+    state: enabled
+
+blocks:
+- name: aud_rate
+  id: variable
+  parameters:
+    comment: ''
+    value: quad_rate//8
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [296, 12]
+    rotation: 0
+    state: enabled
+- name: fade_depth
+  id: variable_qtgui_range
+  parameters:
+    comment: How deep the reflection null cuts (0=none, 1=full destructive)
+    gui_hint: ''
+    label: Reflection Depth
+    min_len: '200'
+    orient: QtCore.Qt.Horizontal
+    rangeType: float
+    start: '0'
+    step: '0.05'
+    stop: '1.0'
+    value: '0'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [120, 100]
+    rotation: 0
+    state: enabled
+- name: flutter_rate
+  id: variable_qtgui_range
+  parameters:
+    comment: Hz - how fast the nulls sweep (flutter/picket rate)
+    gui_hint: ''
+    label: Flutter Rate (Hz)
+    min_len: '200'
+    orient: QtCore.Qt.Horizontal
+    rangeType: float
+    start: '-40'
+    step: '0.5'
+    stop: '40'
+    value: '6'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [248, 96.0]
+    rotation: 0
+    state: enabled
+- name: lmr_taps
+  id: variable
+  parameters:
+    comment: ''
+    value: firdes.band_pass(1.0, quad_rate, 24000, 52000, 4000)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [480, 12]
+    rotation: 0
+    state: enabled
+- name: lpr_delay
+  id: variable_qtgui_range
+  parameters:
+    comment: 'Samples at quad_rate. Lines L+R up with L-R: 481 (22 kHz HPF) + 32
+
+      (lmr_align) = 513. Retune if you change those filters.'
+    gui_hint: ''
+    label: LPR Delay
+    min_len: '200'
+    orient: QtCore.Qt.Horizontal
+    rangeType: int
+    start: '0'
+    step: '1'
+    stop: '2000'
+    value: '513'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [520, 96.0]
+    rotation: 0
+    state: enabled
+- name: noise_v
+  id: variable_qtgui_range
+  parameters:
+    comment: AWGN noise floor
+    gui_hint: ''
+    label: Noise Voltage
+    min_len: '200'
+    orient: QtCore.Qt.Horizontal
+    rangeType: float
+    start: '0'
+    step: '0.005'
+    stop: '1'
+    value: '0.02'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [752, 8.0]
+    rotation: 0
+    state: enabled
+- name: quad_gain
+  id: variable
+  parameters:
+    comment: ''
+    value: quad_rate/(2*math.pi*75e3)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [384, 12]
+    rotation: 0
+    state: enabled
+- name: quad_rate
+  id: variable
+  parameters:
+    comment: ''
+    value: samp_rate//5
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [208, 12]
+    rotation: 0
+    state: enabled
+- name: refl_delay_us
+  id: variable_qtgui_range
+  parameters:
+    comment: Reflection delay in microseconds (sets null spacing across band)
+    gui_hint: ''
+    label: Reflection Delay (us)
+    min_len: '200'
+    orient: QtCore.Qt.Horizontal
+    rangeType: float
+    start: '0.5'
+    step: '0.5'
+    stop: '12'
+    value: '4.0'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [376, 96.0]
+    rotation: 0
+    state: enabled
+- name: samp_rate
+  id: variable
+  parameters:
+    comment: ''
+    value: '2000000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [120, 12]
+    rotation: 0
+    state: enabled
+- name: signal_strength
+  id: variable_qtgui_range
+  parameters:
+    comment: Level of the transmitted signal (both paths) before the noise is added
+    gui_hint: ''
+    label: Signal
+    min_len: '200'
+    orient: QtCore.Qt.Horizontal
+    rangeType: float
+    start: '0'
+    step: '0.005'
+    stop: '1'
+    value: '1'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [872, 0.0]
+    rotation: 0
+    state: enabled
+- name: stereo_gain
+  id: variable_qtgui_range
+  parameters:
+    comment: L-R level. 1 = correct stereo, 0 = mono, above 1 = wider than broadcast
+    gui_hint: ''
+    label: Stereo Level
+    min_len: '200'
+    orient: QtCore.Qt.Horizontal
+    rangeType: float
+    start: '0'
+    step: '0.05'
+    stop: '2'
+    value: '1'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [632, 96.0]
+    rotation: 0
+    state: enabled
+- name: analog_agc_xx_0
+  id: analog_agc_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    gain: '1.0'
+    max_gain: '65536'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    rate: 1e-4
+    reference: '1.0'
+    type: complex
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [904, 440.0]
+    rotation: 0
+    state: enabled
+- name: analog_frequency_modulator_fc_0
+  id: analog_frequency_modulator_fc
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    sensitivity: (((2*3.14159)*75000)/samp_rate)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [496, 560.0]
+    rotation: 180
+    state: enabled
+- name: audio_out
+  id: audio_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    device_name: ''
+    num_inputs: '2'
+    ok_to_block: 'True'
+    samp_rate: '48000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1520, 544.0]
+    rotation: 180
+    state: enabled
+- name: audio_source_0
+  id: audio_source
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 192 kHz composite MPX (e.g. Stereo Tool into a virtual audio cable)
+    device_name: Hi-Fi Cable Output
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_outputs: '1'
+    ok_to_block: 'True'
+    samp_rate: '192000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [936, 568.0]
+    rotation: 180
+    state: enabled
+- name: band_pass_filter_0
+  id: band_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    decim: '1'
+    gain: '10'
+    high_cutoff_freq: '20000'
+    interp: '1'
+    low_cutoff_freq: '18000'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: quad_rate
+    type: fir_filter_fff
+    width: '1000'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1336, 288.0]
+    rotation: 0
+    state: enabled
+- name: blocks_multiply_const_vxx_0
+  id: blocks_multiply_const_vxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    const: signal_strength
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [400, 632.0]
+    rotation: 0
+    state: enabled
+- name: c2i
+  id: blocks_complex_to_imag
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'Im(z^2) = -sin(2*pilot phase): the 38 kHz carrier, upside down'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1696, 448.0]
+    rotation: 0
+    state: enabled
+- name: carrier_sq
+  id: blocks_multiply_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1640, 336.0]
+    rotation: 0
+    state: enabled
+- name: chan_noise
+  id: channels_channel_model
+  parameters:
+    affinity: ''
+    alias: ''
+    block_tags: 'False'
+    comment: adds AWGN floor; taps=[1] since multipath done above
+    epsilon: '1.0'
+    freq_offset: '0.0'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    noise_voltage: noise_v
+    seed: '0'
+    taps: 1.0+0.0j
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [560, 272.0]
+    rotation: 0
+    state: enabled
+- name: deemph_l
+  id: analog_fm_deemph
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: aud_rate
+    tau: 75e-6
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2080, 56.0]
+    rotation: 0
+    state: enabled
+- name: deemph_r
+  id: analog_fm_deemph
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: aud_rate
+    tau: 75e-6
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1928, 440.0]
+    rotation: 180
+    state: enabled
+- name: dsb_mult
+  id: blocks_multiply_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1616, 200.0]
+    rotation: 0
+    state: enabled
+- name: epy_block_0
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\"\nEmbedded Python Block: block-adaptive leaky CMA equaliser\
+      \ for FM broadcast.\nHardened version - cannot diverge, cannot latch its own\
+      \ freeze, and reports\nwhat it is doing so a misbehaviour can be attributed.\n\
+      \nSettings at 400 kHz (quad_rate):\n    ntaps=21, mu=1.0, block=64, leak=1e-7,\
+      \ modulus=1.0\n    freeze_thresh=0.0   <-- start here; see note below\n    debug=200\
+      \           <-- print every 200 blocks, 0 to disable\n\nDIAGNOSING A BLOWUP\n\
+      \  Watch the printed |w|.\n    |w| climbs above ~2      -> the equaliser is\
+      \ the problem\n    |w| stays near 1.0       -> the AGC ahead of it is the problem\n\
+      \                                (analog.agc_cc with max_gain=65536 will wind\n\
+      \                                 up during a deep fade and overshoot on\n \
+      \                                recovery; cap max_gain at ~8)\n    err_avg\
+      \ pinned high      -> freeze latch; that is why it now has\n               \
+      \                 hysteresis and a reset\n\nfreeze_thresh: leave at 0.0 until\
+      \ you have confirmed the equaliser is at\nfault.  The freeze exists to stop\
+      \ CMA chasing an uninvertible deep null, but\nit is the more suspicious half\
+      \ of the block.\n\"\"\"\n\nimport numpy as np\nfrom numpy.lib.stride_tricks\
+      \ import sliding_window_view\nfrom gnuradio import gr\n\n\nclass blk(gr.sync_block):\n\
+      \    def __init__(self, ntaps=21, mu=1.0, block=64, leak=1e-7,\n           \
+      \      modulus=1.0, freeze_thresh=0.0, debug=0):\n        gr.sync_block.__init__(\n\
+      \            self, name=\"FM CMA Equalizer (hardened)\",\n            in_sig=[np.complex64],\
+      \ out_sig=[np.complex64])\n\n        self.ntaps = int(ntaps)\n        self.mu\
+      \ = float(mu)\n        self.block = int(block)\n        self.leak = float(leak)\n\
+      \        self.R2 = float(modulus)\n        self.freeze_thresh = float(freeze_thresh)\n\
+      \        self.debug = int(debug)\n\n        # hard limits - a passthrough equaliser\
+      \ has norm 1.0\n        self.w_soft = 4.0          # rescale above this\n  \
+      \      self.w_hard = 8.0          # full reset above this\n        self.err_clip\
+      \ = 1.0        # same clamp GNU Radio's cma_equalizer_cc uses\n\n        self.w\
+      \ = self._center_spike()\n        self.hist = np.zeros(self.ntaps - 1, dtype=np.complex128)\n\
+      \        self.err_avg = 0.0\n        self.frozen = False\n        self.nblk\
+      \ = 0              # <-- this is what was missing\n        self.nreset = 0\n\
+      \n        self.set_output_multiple(self.block)\n\n    def _center_spike(self):\n\
+      \        w = np.zeros(self.ntaps, dtype=np.complex128)\n        w[self.ntaps\
+      \ // 2] = 1.0\n        return w\n\n    def work(self, input_items, output_items):\n\
+      \        x = input_items[0].astype(np.complex128)\n        out = output_items[0]\n\
+      \        n = len(x)\n\n        padded = np.concatenate([self.hist, x])\n   \
+      \     X = sliding_window_view(padded, self.ntaps)[:, ::-1]\n\n        w = self.w\n\
+      \        B = self.block\n        mu, leak, R2 = self.mu, self.leak, self.R2\n\
+      \        ft = self.freeze_thresh\n        ea = self.err_avg\n\n        for i\
+      \ in range(0, n, B):\n            j = min(i + B, n)\n            Xb = X[i:j]\n\
+      \            yb = Xb @ w\n            out[i:j] = yb\n\n            e = np.abs(yb)\
+      \ ** 2 - R2\n            ea += 0.01 * (float(np.mean(e * e)) - ea)\n\n     \
+      \       # hysteresis: freeze above the threshold, release at half of it,\n \
+      \           # so frozen taps producing high error cannot hold the freeze on\n\
+      \            if ft > 0.0:\n                if self.frozen:\n               \
+      \     if ea < 0.5 * ft:\n                        self.frozen = False\n     \
+      \           elif ea > ft:\n                    self.frozen = True\n\n      \
+      \      if not self.frozen:\n                e = np.clip(e, -self.err_clip, self.err_clip)\n\
+      \                energy = float(np.mean(np.sum(np.abs(Xb) ** 2, axis=1)))\n\
+      \                # floor the denominator: during a deep fade the block energy\n\
+      \                # collapses and an unfloored 1/energy makes the step explode\n\
+      \                energy = max(energy, 0.05 * self.ntaps)\n                grad\
+      \ = (e * yb) @ Xb.conj() / len(yb)\n                w = (1.0 - leak) * w - (mu\
+      \ / energy) * grad\n\n                nrm = np.linalg.norm(w)\n            \
+      \    if not np.isfinite(nrm) or nrm > self.w_hard:\n                    w =\
+      \ self._center_spike()      # back to passthrough\n                    ea =\
+      \ 0.0\n                    self.frozen = False\n                    self.nreset\
+      \ += 1\n                elif nrm > self.w_soft:\n                    w *= self.w_soft\
+      \ / nrm\n\n            self.nblk += 1\n            if self.debug and self.nblk\
+      \ % self.debug == 0:\n                print(f\"|w|={np.linalg.norm(w):7.3f}\
+      \  err_avg={ea:8.5f}  \"\n                      f\"frozen={int(self.frozen)}\
+      \  resets={self.nreset}\",\n                      flush=True)\n\n        self.w\
+      \ = w\n        self.err_avg = ea\n        self.hist = padded[-(self.ntaps -\
+      \ 1):]\n        return n\n\n    def get_taps(self):\n        return self.w.copy()"
+    affinity: ''
+    alias: ''
+    block: '64'
+    comment: ''
+    debug: '200'
+    freeze_thresh: '0'
+    leak: 1e-7
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    modulus: '1'
+    mu: '1'
+    ntaps: '21'
+  states:
+    _io_cache: ('FM CMA Equalizer (hardened)', 'blk', [('ntaps', '21'), ('mu', '1.0'),
+      ('block', '64'), ('leak', '1e-07'), ('modulus', '1.0'), ('freeze_thresh', '0.0'),
+      ('debug', '0')], [('0', 'complex', 1)], [('0', 'complex', 1)], '', ['block',
+      'debug', 'freeze_thresh', 'leak', 'mu', 'ntaps'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [904, 104.0]
+    rotation: 0
+    state: enabled
+- name: fade_fft
+  id: qtgui_freq_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    average: '0.2'
+    axislabels: 'True'
+    bw: samp_rate
+    color1: '"blue"'
+    color10: '"dark blue"'
+    color2: '"red"'
+    color3: '"green"'
+    color4: '"black"'
+    color5: '"cyan"'
+    color6: '"magenta"'
+    color7: '"yellow"'
+    color8: '"dark red"'
+    color9: '"dark green"'
+    comment: watch the null sweep across the band
+    ctrlpanel: 'False'
+    fc: '0'
+    fftsize: '2048'
+    freqhalf: 'True'
+    grid: 'True'
+    gui_hint: ''
+    label: Relative Gain
+    label1: faded
+    label10: ''''''
+    label2: ''''''
+    label3: ''''''
+    label4: ''''''
+    label5: ''''''
+    label6: ''''''
+    label7: ''''''
+    label8: ''''''
+    label9: ''''''
+    legend: 'True'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    name: '"Faded Signal (watch the notch move)"'
+    nconnections: '1'
+    norm_window: 'False'
+    showports: 'False'
+    tr_chan: '0'
+    tr_level: '0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_tag: '""'
+    type: complex
+    units: dB
+    update_time: 1/60
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    wintype: window.WIN_BLACKMAN_hARRIS
+    ymax: '10'
+    ymin: '-90'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [600, 448.0]
+    rotation: 0
+    state: enabled
+- name: fade_fft_0
+  id: qtgui_freq_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    average: '0.2'
+    axislabels: 'True'
+    bw: samp_rate
+    color1: '"blue"'
+    color10: '"dark blue"'
+    color2: '"red"'
+    color3: '"green"'
+    color4: '"black"'
+    color5: '"cyan"'
+    color6: '"magenta"'
+    color7: '"yellow"'
+    color8: '"dark red"'
+    color9: '"dark green"'
+    comment: watch the null sweep across the band
+    ctrlpanel: 'False'
+    fc: '0'
+    fftsize: '2048'
+    freqhalf: 'True'
+    grid: 'True'
+    gui_hint: ''
+    label: Relative Gain
+    label1: faded
+    label10: ''''''
+    label2: ''''''
+    label3: ''''''
+    label4: ''''''
+    label5: ''''''
+    label6: ''''''
+    label7: ''''''
+    label8: ''''''
+    label9: ''''''
+    legend: 'True'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    name: '"Repaired Signal"'
+    nconnections: '1'
+    norm_window: 'False'
+    showports: 'False'
+    tr_chan: '0'
+    tr_level: '0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_tag: '""'
+    type: complex
+    units: dB
+    update_time: 1/60
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    wintype: window.WIN_BLACKMAN_hARRIS
+    ymax: '10'
+    ymin: '-90'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1312, 496.0]
+    rotation: 0
+    state: enabled
+- name: file_source
+  id: blocks_file_source
+  parameters:
+    affinity: ''
+    alias: ''
+    begin_tag: pmt.PMT_NIL
+    comment: 'Alternative source: a 2 Msps complex IQ recording. To use it, enable
+
+      this and disable audio_source_0, rational_resampler_xxx_1 and
+
+      analog_frequency_modulator_fc_0.'
+    file: E:\iqrecord.iq
+    length: '0'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: '0'
+    repeat: 'True'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 260]
+    rotation: 0
+    state: disabled
+- name: flutter_osc
+  id: analog_sig_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    amp: fade_depth
+    comment: rotating phasor = moving reflection => sweeping nulls
+    freq: flutter_rate
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: '0'
+    phase: '0'
+    samp_rate: samp_rate
+    showports: 'False'
+    type: complex
+    waveform: analog.GR_COS_WAVE
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [24, 512.0]
+    rotation: 0
+    state: enabled
+- name: half_l
+  id: blocks_multiply_const_vxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    const: '0.5'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1928, 64.0]
+    rotation: 0
+    state: enabled
+- name: half_r
+  id: blocks_multiply_const_vxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    const: '0.5'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2072, 184.0]
+    rotation: 0
+    state: enabled
+- name: high_pass_filter_0
+  id: high_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    cutoff_freq: '22000'
+    decim: '1'
+    gain: '1'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: quad_rate
+    type: fir_filter_fff
+    width: '1000'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1376, 56.0]
+    rotation: 0
+    state: enabled
+- name: hilbert_fc_0
+  id: hilbert_fc
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_taps: '65'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1480, 472.0]
+    rotation: 0
+    state: enabled
+- name: import_math
+  id: import
+  parameters:
+    alias: ''
+    comment: ''
+    imports: import math
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 148]
+    rotation: 0
+    state: enabled
+- name: import_np
+  id: import
+  parameters:
+    alias: ''
+    comment: ''
+    imports: import numpy as np
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 100]
+    rotation: 0
+    state: enabled
+- name: lmr_bpf
+  id: fir_filter_xxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    decim: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_delay: '0'
+    taps: lmr_taps
+    type: fff
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1376, 208.0]
+    rotation: 0
+    state: disabled
+- name: lmr_gain
+  id: blocks_multiply_const_vxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: -2 turns the normalised, inverted carrier into 2*sin(38 kHz)
+    const: -2*stereo_gain
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1784, 360.0]
+    rotation: 0
+    state: enabled
+- name: lmr_lpf
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    cutoff_freq: 15e3
+    decim: '8'
+    gain: '1'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: quad_rate
+    type: fir_filter_fff
+    width: 4e3
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1752, 160.0]
+    rotation: 0
+    state: enabled
+- name: lpr_delay_blk
+  id: blocks_delay
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    delay: lpr_delay
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_ports: '1'
+    showports: 'False'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1320, 16.0]
+    rotation: 0
+    state: enabled
+- name: lpr_lpf
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    cutoff_freq: 15e3
+    decim: '8'
+    gain: '1'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: quad_rate
+    type: fir_filter_fff
+    width: 4e3
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1584, 24.0]
+    rotation: 0
+    state: enabled
+- name: matrix_add
+  id: blocks_add_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1824, 56.0]
+    rotation: 0
+    state: enabled
+- name: matrix_sub
+  id: blocks_sub_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1944, 176.0]
+    rotation: 0
+    state: enabled
+- name: path_sum
+  id: blocks_add_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: direct + reflection = multipath
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [440, 304.0]
+    rotation: 0
+    state: enabled
+- name: qtgui_const_sink_x_0
+  id: qtgui_const_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    axislabels: 'True'
+    color1: '"blue"'
+    color10: '"dark blue"'
+    color2: '"red"'
+    color3: '"green"'
+    color4: '"black"'
+    color5: '"cyan"'
+    color6: '"magenta"'
+    color7: '"yellow"'
+    color8: '"dark red"'
+    color9: '"dark green"'
+    comment: ''
+    grid: 'False'
+    gui_hint: ''
+    label1: ''
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    legend: 'True'
+    marker1: '0'
+    marker10: '0'
+    marker2: '0'
+    marker3: '0'
+    marker4: '0'
+    marker5: '0'
+    marker6: '0'
+    marker7: '0'
+    marker8: '0'
+    marker9: '0'
+    name: '""'
+    nconnections: '1'
+    size: '1024'
+    style1: '0'
+    style10: '0'
+    style2: '0'
+    style3: '0'
+    style4: '0'
+    style5: '0'
+    style6: '0'
+    style7: '0'
+    style8: '0'
+    style9: '0'
+    tr_chan: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: complex
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    xmax: '2'
+    xmin: '-2'
+    ymax: '2'
+    ymin: '-2'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1128, 72.0]
+    rotation: 0
+    state: disabled
+- name: qtgui_time_sink_x_0
+  id: qtgui_time_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    axislabels: 'True'
+    color1: blue
+    color10: dark blue
+    color2: red
+    color3: green
+    color4: black
+    color5: cyan
+    color6: magenta
+    color7: yellow
+    color8: dark red
+    color9: dark green
+    comment: ''
+    ctrlpanel: 'False'
+    entags: 'True'
+    grid: 'False'
+    gui_hint: ''
+    label1: Signal 1
+    label10: Signal 10
+    label2: Signal 2
+    label3: Signal 3
+    label4: Signal 4
+    label5: Signal 5
+    label6: Signal 6
+    label7: Signal 7
+    label8: Signal 8
+    label9: Signal 9
+    legend: 'True'
+    marker1: '-1'
+    marker10: '-1'
+    marker2: '-1'
+    marker3: '-1'
+    marker4: '-1'
+    marker5: '-1'
+    marker6: '-1'
+    marker7: '-1'
+    marker8: '-1'
+    marker9: '-1'
+    name: '""'
+    nconnections: '1'
+    size: '1024'
+    srate: samp_rate
+    stemplot: 'False'
+    style1: '1'
+    style10: '1'
+    style2: '1'
+    style3: '1'
+    style4: '1'
+    style5: '1'
+    style6: '1'
+    style7: '1'
+    style8: '1'
+    style9: '1'
+    tr_chan: '0'
+    tr_delay: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: float
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    ylabel: Amplitude
+    ymax: '1'
+    ymin: '-1'
+    yunit: '""'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1896, 328.0]
+    rotation: 0
+    state: disabled
+- name: qtgui_time_sink_x_0_1
+  id: qtgui_time_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    axislabels: 'True'
+    color1: blue
+    color10: dark blue
+    color2: red
+    color3: green
+    color4: black
+    color5: cyan
+    color6: magenta
+    color7: yellow
+    color8: dark red
+    color9: dark green
+    comment: ''
+    ctrlpanel: 'False'
+    entags: 'True'
+    grid: 'False'
+    gui_hint: ''
+    label1: Signal 1
+    label10: Signal 10
+    label2: Signal 2
+    label3: Signal 3
+    label4: Signal 4
+    label5: Signal 5
+    label6: Signal 6
+    label7: Signal 7
+    label8: Signal 8
+    label9: Signal 9
+    legend: 'True'
+    marker1: '-1'
+    marker10: '-1'
+    marker2: '-1'
+    marker3: '-1'
+    marker4: '-1'
+    marker5: '-1'
+    marker6: '-1'
+    marker7: '-1'
+    marker8: '-1'
+    marker9: '-1'
+    name: '""'
+    nconnections: '1'
+    size: '1024'
+    srate: '50000'
+    stemplot: 'False'
+    style1: '1'
+    style10: '1'
+    style2: '1'
+    style3: '1'
+    style4: '1'
+    style5: '1'
+    style6: '1'
+    style7: '1'
+    style8: '1'
+    style9: '1'
+    tr_chan: '0'
+    tr_delay: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: float
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    ylabel: Amplitude
+    ymax: '1'
+    ymin: '-1'
+    yunit: '""'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1896, 248.0]
+    rotation: 0
+    state: disabled
+- name: quad_demod
+  id: analog_quadrature_demod_cf
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    gain: quad_gain
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1136, 296.0]
+    rotation: 0
+    state: enabled
+- name: rational_resampler_xxx_1
+  id: rational_resampler_xxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    decim: '12'
+    fbw: '0'
+    interp: '125'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    taps: '[]'
+    type: fff
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [696, 584.0]
+    rotation: 180
+    state: enabled
+- name: rational_resampler_xxx_2
+  id: rational_resampler_xxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    decim: '1'
+    fbw: '0'
+    interp: '5'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    taps: '[]'
+    type: ccc
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1144, 160.0]
+    rotation: 0
+    state: enabled
+- name: refl_delay_blk
+  id: blocks_delay
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: delay = reflection path length
+    delay: int(refl_delay_us*1e-6*samp_rate)
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_ports: '1'
+    showports: 'False'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [192, 400.0]
+    rotation: 0
+    state: enabled
+- name: refl_scale
+  id: blocks_multiply_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: apply moving phase/amplitude to reflection
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [320, 448.0]
+    rotation: 0
+    state: enabled
+- name: rf_lpf
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    cutoff_freq: '200000'
+    decim: '5'
+    gain: '1'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: samp_rate
+    type: fir_filter_ccf
+    width: '5000'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [792, 264.0]
+    rotation: 0
+    state: enabled
+- name: rr_l
+  id: rational_resampler_xxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    decim: '25'
+    fbw: '0'
+    interp: '24'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    taps: '[]'
+    type: fff
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1760, 600.0]
+    rotation: 180
+    state: enabled
+- name: rr_r
+  id: rational_resampler_xxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    decim: '25'
+    fbw: '0'
+    interp: '24'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    taps: '[]'
+    type: fff
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1752, 496.0]
+    rotation: 180
+    state: enabled
+
+- name: carrier_norm
+  id: blocks_divide_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'divide by pilot power, so the carrier level does not depend on pilot injection'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1880, 448.0]
+    rotation: 0
+    state: enabled
+- name: lmr_align
+  id: blocks_delay
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'Hilbert delay (65 taps), lines the composite up with the 38 kHz carrier'
+    delay: '32'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_ports: '1'
+    showports: 'False'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1520, 72.0]
+    rotation: 0
+    state: enabled
+- name: pilot_floor
+  id: blocks_add_const_vxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: keeps the divide finite when there is no pilot
+    const: 1e-6
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1880, 520.0]
+    rotation: 0
+    state: enabled
+- name: pilot_pwr
+  id: blocks_complex_to_mag_squared
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1696, 520.0]
+    rotation: 0
+    state: enabled
+
+connections:
+- [analog_agc_xx_0, '0', epy_block_0, '0']
+- [analog_frequency_modulator_fc_0, '0', blocks_multiply_const_vxx_0, '0']
+- [audio_source_0, '0', rational_resampler_xxx_1, '0']
+- [band_pass_filter_0, '0', hilbert_fc_0, '0']
+- [blocks_multiply_const_vxx_0, '0', path_sum, '0']
+- [blocks_multiply_const_vxx_0, '0', refl_delay_blk, '0']
+- [c2i, '0', carrier_norm, '0']
+- [c2i, '0', qtgui_time_sink_x_0, '0']
+- [carrier_norm, '0', lmr_gain, '0']
+- [carrier_sq, '0', c2i, '0']
+- [chan_noise, '0', fade_fft, '0']
+- [chan_noise, '0', rf_lpf, '0']
+- [deemph_l, '0', rr_l, '0']
+- [deemph_r, '0', rr_r, '0']
+- [dsb_mult, '0', lmr_lpf, '0']
+- [epy_block_0, '0', qtgui_const_sink_x_0, '0']
+- [epy_block_0, '0', quad_demod, '0']
+- [epy_block_0, '0', rational_resampler_xxx_2, '0']
+- [file_source, '0', blocks_multiply_const_vxx_0, '0']
+- [flutter_osc, '0', refl_scale, '1']
+- [half_l, '0', deemph_l, '0']
+- [half_r, '0', deemph_r, '0']
+- [high_pass_filter_0, '0', lmr_align, '0']
+- [hilbert_fc_0, '0', carrier_sq, '0']
+- [hilbert_fc_0, '0', carrier_sq, '1']
+- [hilbert_fc_0, '0', pilot_pwr, '0']
+- [lmr_bpf, '0', dsb_mult, '0']
+- [lmr_gain, '0', dsb_mult, '1']
+- [lmr_lpf, '0', matrix_add, '1']
+- [lmr_lpf, '0', matrix_sub, '1']
+- [lmr_lpf, '0', qtgui_time_sink_x_0_1, '0']
+- [lmr_align, '0', dsb_mult, '0']
+- [lpr_delay_blk, '0', lpr_lpf, '0']
+- [lpr_lpf, '0', matrix_add, '0']
+- [lpr_lpf, '0', matrix_sub, '0']
+- [matrix_add, '0', half_l, '0']
+- [matrix_sub, '0', half_r, '0']
+- [path_sum, '0', chan_noise, '0']
+- [pilot_floor, '0', carrier_norm, '1']
+- [pilot_pwr, '0', pilot_floor, '0']
+- [quad_demod, '0', band_pass_filter_0, '0']
+- [quad_demod, '0', high_pass_filter_0, '0']
+- [quad_demod, '0', lmr_bpf, '0']
+- [quad_demod, '0', lpr_delay_blk, '0']
+- [rational_resampler_xxx_1, '0', analog_frequency_modulator_fc_0, '0']
+- [rational_resampler_xxx_2, '0', fade_fft_0, '0']
+- [refl_delay_blk, '0', refl_scale, '0']
+- [refl_scale, '0', path_sum, '1']
+- [rf_lpf, '0', analog_agc_xx_0, '0']
+- [rr_l, '0', audio_out, '0']
+- [rr_r, '0', audio_out, '1']
+
+metadata:
+  file_format: 1
+  grc_version: 3.10.10.0
