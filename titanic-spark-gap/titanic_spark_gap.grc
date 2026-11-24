@@ -1,0 +1,1120 @@
+options:
+    parameters:
+        author: fole7936
+        catch_exceptions: 'True'
+        category: '[GRC Hier Blocks]'
+        cmake_opt: ''
+        comment: ''
+        copyright: ''
+        description: Marconi 5 kW synchronous rotary-spark transmitter replica for
+            a HackRF
+        gen_cmake: 'On'
+        gen_linking: dynamic
+        generate_options: qt_gui
+        hier_block_src_path: '.:'
+        id: titanic_spark_gap
+        max_nouts: '0'
+        output_language: python
+        placement: (0,0)
+        qt_qss_theme: ''
+        realtime_scheduling: ''
+        run: 'True'
+        run_command: '{python} -u {filename}'
+        run_options: prompt
+        sizing_mode: fixed
+        thread_safe_setters: ''
+        title: RMS Titanic Spark Transmitter (replica)
+        window_size: (1000,1000)
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 8
+        - 8
+        rotation: 0
+        state: enabled
+blocks:
+-   name: coupling
+    id: variable_qtgui_range
+    parameters:
+        comment: 0 = one circuit (one hump); higher = tighter coupling, two humps
+            further apart
+        gui_hint: 'tab@0: 2, 1, 1, 1'
+        label: Jigger coupling k
+        min_len: '200'
+        orient: QtCore.Qt.Horizontal
+        rangeType: float
+        start: '0'
+        step: '0.01'
+        stop: '0.4'
+        value: '0.1'
+        widget: counter_slider
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 200
+        - 200
+        rotation: 0
+        state: enabled
+-   name: decrement
+    id: variable_qtgui_range
+    parameters:
+        comment: Logarithmic decrement. 1912 US limit 0.2; plain sparks were often
+            far higher
+        gui_hint: 'tab@0: 2, 0, 1, 1'
+        label: Decrement (per RF cycle)
+        min_len: '200'
+        orient: QtCore.Qt.Horizontal
+        rangeType: float
+        start: '0.02'
+        step: '0.01'
+        stop: '1.0'
+        value: '0.2'
+        widget: counter_slider
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 8
+        - 200
+        rotation: 0
+        state: enabled
+-   name: hackrf_amp
+    id: variable
+    parameters:
+        comment: HackRF +14 dB amplifier
+        value: 'False'
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 392
+        - 12
+        rotation: 0
+        state: enabled
+-   name: jitter
+    id: variable_qtgui_range
+    parameters:
+        comment: RMS, fraction of the spark period. ~0 synchronous disc (musical);
+            0.3+ plain gap (rasp)
+        gui_hint: 'tab@0: 3, 0, 1, 1'
+        label: Spark timing jitter
+        min_len: '200'
+        orient: QtCore.Qt.Horizontal
+        rangeType: float
+        start: '0'
+        step: '0.005'
+        stop: '0.5'
+        value: '0.02'
+        widget: counter_slider
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 392
+        - 200
+        rotation: 0
+        state: enabled
+-   name: key
+    id: variable_qtgui_push_button
+    parameters:
+        comment: ''
+        gui_hint: 'tab@0: 6, 0, 1, 2'
+        label: Key (hold, in Hand key mode)
+        pressed: '1'
+        released: '0'
+        type: int
+        value: '0'
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 392
+        - 300
+        rotation: 0
+        state: enabled
+-   name: message
+    id: variable_qtgui_entry
+    parameters:
+        comment: <SOS> sends a run-together prosign
+        entry_signal: editingFinished
+        gui_hint: 'tab@0: 5, 0, 1, 2'
+        label: Message
+        type: string
+        value: CQD CQD CQD DE MGY 41.46N 50.14W
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 8
+        - 300
+        rotation: 0
+        state: enabled
+-   name: mode
+    id: variable_qtgui_chooser
+    parameters:
+        comment: ''
+        gui_hint: 'tab@0: 4, 0, 1, 1'
+        label: Keying
+        label0: ''
+        label1: ''
+        label2: ''
+        label3: ''
+        label4: ''
+        labels: '[''Message (loops)'', ''Hand key'']'
+        num_opts: '0'
+        option0: '0'
+        option1: '1'
+        option2: '2'
+        option3: '3'
+        option4: '4'
+        options: '[0, 1]'
+        orient: Qt.QHBoxLayout
+        type: int
+        value: '0'
+        widget: radio_buttons
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 200
+        - 300
+        rotation: 0
+        state: enabled
+-   name: orig_freq
+    id: variable
+    parameters:
+        comment: 'The original carrier: 600 m. Sets the decay and the jigger split'
+        value: 500e3
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 488
+        - 12
+        rotation: 0
+        state: enabled
+-   name: rf_gain
+    id: variable_qtgui_range
+    parameters:
+        comment: HackRF TX VGA. Keep low into coax and attenuators
+        gui_hint: 'tab@0: 0, 0, 1, 2'
+        label: HackRF VGA (dB)
+        min_len: '200'
+        orient: QtCore.Qt.Horizontal
+        rangeType: float
+        start: '0'
+        step: '1'
+        stop: '47'
+        value: '0'
+        widget: counter_slider
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 8
+        - 100
+        rotation: 0
+        state: enabled
+-   name: rx_bw
+    id: variable_qtgui_range
+    parameters:
+        comment: Bandwidth of the AM monitor receiver
+        gui_hint: 'tab@0: 3, 1, 1, 1'
+        label: Monitor RX bandwidth (Hz)
+        min_len: '200'
+        orient: QtCore.Qt.Horizontal
+        rangeType: float
+        start: '3000'
+        step: '1000'
+        stop: '35000'
+        value: '20000'
+        widget: counter_slider
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 584
+        - 100
+        rotation: 0
+        state: enabled
+-   name: samp_rate
+    id: variable
+    parameters:
+        comment: 'HackRF Soapy sink: whole-MHz rates only. The replica fills this
+            whole width'
+        value: '2000000'
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 200
+        - 12
+        rotation: 0
+        state: enabled
+-   name: spark_rate
+    id: variable_qtgui_range
+    parameters:
+        comment: 'Titanic: 840 (420 Hz alternator, sparks at both peaks)'
+        gui_hint: 'tab@0: 1, 0, 1, 1'
+        label: Spark rate (/s)
+        min_len: '200'
+        orient: QtCore.Qt.Horizontal
+        rangeType: float
+        start: '300'
+        step: '10'
+        stop: '1200'
+        value: '840'
+        widget: counter_slider
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 200
+        - 100
+        rotation: 0
+        state: enabled
+-   name: tx_freq
+    id: variable
+    parameters:
+        comment: Where the replica is transmitted
+        value: 433.5e6
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 296
+        - 12
+        rotation: 0
+        state: enabled
+-   name: volume
+    id: variable_qtgui_range
+    parameters:
+        comment: ''
+        gui_hint: 'tab@0: 4, 1, 1, 1'
+        label: Monitor volume
+        min_len: '200'
+        orient: QtCore.Qt.Horizontal
+        rangeType: float
+        start: '0'
+        step: '0.1'
+        stop: '10'
+        value: '4'
+        widget: counter_slider
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 584
+        - 200
+        rotation: 0
+        state: enabled
+-   name: wpm
+    id: variable_qtgui_range
+    parameters:
+        comment: ''
+        gui_hint: 'tab@0: 1, 1, 1, 1'
+        label: Speed (WPM)
+        min_len: '200'
+        orient: QtCore.Qt.Horizontal
+        rangeType: float
+        start: '5'
+        step: '1'
+        stop: '35'
+        value: '20'
+        widget: counter_slider
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 392
+        - 100
+        rotation: 0
+        state: enabled
+-   name: audio_out
+    id: audio_sink
+    parameters:
+        affinity: ''
+        alias: ''
+        comment: 'ok_to_block off: the sound card must not hold back the HackRF'
+        device_name: ''''''
+        num_inputs: '1'
+        ok_to_block: 'False'
+        samp_rate: '48000'
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 1200
+        - 788
+        rotation: 0
+        state: enabled
+-   name: dc_block
+    id: dc_blocker_xx
+    parameters:
+        affinity: ''
+        alias: ''
+        comment: ''
+        length: '64'
+        long_form: 'True'
+        maxoutbuf: '0'
+        minoutbuf: '0'
+        type: ff
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 880
+        - 788
+        rotation: 0
+        state: enabled
+-   name: detector
+    id: blocks_complex_to_mag
+    parameters:
+        affinity: ''
+        alias: ''
+        comment: Envelope detector, like a crystal or magnetic detector
+        maxoutbuf: '0'
+        minoutbuf: '0'
+        vlen: '1'
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 520
+        - 800
+        rotation: 0
+        state: enabled
+-   name: env
+    id: blocks_complex_to_mag
+    parameters:
+        affinity: ''
+        alias: ''
+        comment: ''
+        maxoutbuf: '0'
+        minoutbuf: '0'
+        vlen: '1'
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 560
+        - 640
+        rotation: 0
+        state: enabled
+-   name: hackrf_sink
+    id: soapy_hackrf_sink
+    parameters:
+        affinity: ''
+        alias: ''
+        amp: hackrf_amp
+        bandwidth: '0'
+        center_freq: tx_freq
+        comment: ''
+        dev_args: ''''''
+        samp_rate: samp_rate
+        type: fc32
+        vga: rf_gain
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 560
+        - 420
+        rotation: 0
+        state: enabled
+-   name: no_hackrf
+    id: blocks_null_sink
+    parameters:
+        affinity: ''
+        alias: ''
+        bus_structure_sink: '[[0,],]'
+        comment: ''
+        num_inputs: '1'
+        type: complex
+        vlen: '1'
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 480
+        - 348
+        rotation: 0
+        state: disabled
+-   name: rx_filter
+    id: low_pass_filter
+    parameters:
+        affinity: ''
+        alias: ''
+        beta: '6.76'
+        comment: 'The receiver''s tuning: 2 Msps to 100 ksps'
+        cutoff_freq: rx_bw / 2
+        decim: '20'
+        gain: '1'
+        interp: '1'
+        maxoutbuf: '0'
+        minoutbuf: '0'
+        samp_rate: samp_rate
+        type: fir_filter_ccf
+        width: 10e3
+        win: window.WIN_HAMMING
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 304
+        - 760
+        rotation: 0
+        state: enabled
+-   name: rx_resamp
+    id: rational_resampler_xxx
+    parameters:
+        affinity: ''
+        alias: ''
+        comment: ''
+        decim: '25'
+        fbw: '0'
+        interp: '12'
+        maxoutbuf: '0'
+        minoutbuf: '0'
+        taps: '[]'
+        type: fff
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 680
+        - 780
+        rotation: 0
+        state: enabled
+-   name: scope_spark
+    id: qtgui_time_sink_x
+    parameters:
+        affinity: ''
+        alias: ''
+        alpha1: '1.0'
+        alpha10: '1.0'
+        alpha2: '1.0'
+        alpha3: '1.0'
+        alpha4: '1.0'
+        alpha5: '1.0'
+        alpha6: '1.0'
+        alpha7: '1.0'
+        alpha8: '1.0'
+        alpha9: '1.0'
+        autoscale: 'False'
+        axislabels: 'True'
+        color1: blue
+        color10: dark blue
+        color2: red
+        color3: green
+        color4: black
+        color5: cyan
+        color6: magenta
+        color7: yellow
+        color8: dark red
+        color9: dark green
+        comment: ''
+        ctrlpanel: 'False'
+        entags: 'True'
+        grid: 'True'
+        gui_hint: 'tab@2: 0, 0, 1, 1'
+        label1: Signal 1
+        label10: Signal 10
+        label2: Signal 2
+        label3: Signal 3
+        label4: Signal 4
+        label5: Signal 5
+        label6: Signal 6
+        label7: Signal 7
+        label8: Signal 8
+        label9: Signal 9
+        legend: 'False'
+        marker1: '-1'
+        marker10: '-1'
+        marker2: '-1'
+        marker3: '-1'
+        marker4: '-1'
+        marker5: '-1'
+        marker6: '-1'
+        marker7: '-1'
+        marker8: '-1'
+        marker9: '-1'
+        name: '"One spark (aerial current envelope)"'
+        nconnections: '1'
+        size: '300'
+        srate: samp_rate
+        stemplot: 'False'
+        style1: '1'
+        style10: '1'
+        style2: '1'
+        style3: '1'
+        style4: '1'
+        style5: '1'
+        style6: '1'
+        style7: '1'
+        style8: '1'
+        style9: '1'
+        tr_chan: '0'
+        tr_delay: 5e-6
+        tr_level: '0.05'
+        tr_mode: qtgui.TRIG_MODE_NORM
+        tr_slope: qtgui.TRIG_SLOPE_POS
+        tr_tag: '""'
+        type: float
+        update_time: '0.10'
+        width1: '1'
+        width10: '1'
+        width2: '1'
+        width3: '1'
+        width4: '1'
+        width5: '1'
+        width6: '1'
+        width7: '1'
+        width8: '1'
+        width9: '1'
+        ylabel: Amplitude
+        ymax: '1.1'
+        ymin: '0'
+        yunit: '""'
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 760
+        - 600
+        rotation: 0
+        state: enabled
+-   name: scope_train
+    id: qtgui_time_sink_x
+    parameters:
+        affinity: ''
+        alias: ''
+        alpha1: '1.0'
+        alpha10: '1.0'
+        alpha2: '1.0'
+        alpha3: '1.0'
+        alpha4: '1.0'
+        alpha5: '1.0'
+        alpha6: '1.0'
+        alpha7: '1.0'
+        alpha8: '1.0'
+        alpha9: '1.0'
+        autoscale: 'False'
+        axislabels: 'True'
+        color1: blue
+        color10: dark blue
+        color2: red
+        color3: green
+        color4: black
+        color5: cyan
+        color6: magenta
+        color7: yellow
+        color8: dark red
+        color9: dark green
+        comment: ''
+        ctrlpanel: 'False'
+        entags: 'True'
+        grid: 'True'
+        gui_hint: 'tab@2: 1, 0, 1, 1'
+        label1: Signal 1
+        label10: Signal 10
+        label2: Signal 2
+        label3: Signal 3
+        label4: Signal 4
+        label5: Signal 5
+        label6: Signal 6
+        label7: Signal 7
+        label8: Signal 8
+        label9: Signal 9
+        legend: 'False'
+        marker1: '-1'
+        marker10: '-1'
+        marker2: '-1'
+        marker3: '-1'
+        marker4: '-1'
+        marker5: '-1'
+        marker6: '-1'
+        marker7: '-1'
+        marker8: '-1'
+        marker9: '-1'
+        name: '"Spark train"'
+        nconnections: '1'
+        size: '8000'
+        srate: samp_rate
+        stemplot: 'False'
+        style1: '1'
+        style10: '1'
+        style2: '1'
+        style3: '1'
+        style4: '1'
+        style5: '1'
+        style6: '1'
+        style7: '1'
+        style8: '1'
+        style9: '1'
+        tr_chan: '0'
+        tr_delay: '0.0002'
+        tr_level: '0.05'
+        tr_mode: qtgui.TRIG_MODE_AUTO
+        tr_slope: qtgui.TRIG_SLOPE_POS
+        tr_tag: '""'
+        type: float
+        update_time: '0.10'
+        width1: '1'
+        width10: '1'
+        width2: '1'
+        width3: '1'
+        width4: '1'
+        width5: '1'
+        width6: '1'
+        width7: '1'
+        width8: '1'
+        width9: '1'
+        ylabel: Amplitude
+        ymax: '1.1'
+        ymin: '0'
+        yunit: '""'
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 760
+        - 700
+        rotation: 0
+        state: enabled
+-   name: spark_tx
+    id: epy_block
+    parameters:
+        _source_code: "\"\"\"\nTitanic spark transmitter: the antenna current of a\
+            \ Marconi 5 kW synchronous\nrotary-spark set, as complex baseband centred\
+            \ on the original carrier.\n\nEach spark discharges the condenser into\
+            \ the primary circuit. The jigger\n(oscillation transformer) couples it\
+            \ to the aerial circuit, and the aerial\nrings with a damped wave that\
+            \ dies away long before the next spark. With\ncoupling k the two circuits\
+            \ share their energy, the wave splits into two\nfrequencies, f0/sqrt(1+k)\
+            \ and f0/sqrt(1-k), and the aerial current\nbeats between them:\n\n  \
+            \  i(t) = exp(-decrement*f0*t) * (cos w1 t - cos w2 t)      (k > 0)\n\
+            \    i(t) = exp(-decrement*f0*t) * cos w0 t                    (k = 0)\n\
+            \ndecrement is the logarithmic decrement per RF cycle (the 1912 US law\n\
+            limited ships to 0.2). f0 is the original carrier (500 kHz, 600 m); the\n\
+            decay and the split are worked out at f0 even though the replica is\n\
+            transmitted somewhere else, so it occupies the bandwidth the original\
+            \ did.\n\nSparks come at spark_rate (840 a second on the Titanic: a 420\
+            \ Hz\nalternator, sparking at both peaks of each cycle). timing_jitter\
+            \ is the RMS\nspark-to-spark timing error as a fraction of the spark period:\
+            \ near 0 is a\nsynchronous disc (a clear musical note), 0.3 and above\
+            \ sounds like a plain\nor non-synchronous gap (a rasp). amp_jitter varies\
+            \ each spark's strength.\n\nEach spark starts the RF oscillation afresh,\
+            \ so its carrier phase is set by\nthe moment it fires. Spark-timing errors\
+            \ of even a few microseconds are\nmany RF cycles at 500 kHz, so on the\
+            \ air the sparks add up incoherently: a\nsmooth broad hump, not a carrier.\
+            \ The musical note is in the envelope,\nwhich is what a crystal or magnetic\
+            \ detector heard.\n\nThe key switched the alternator's supply, so it starts\
+            \ and stops whole\nsparks: the key is sampled at each spark.\n\nmode 0\
+            \ sends `text` in Morse at `wpm`, then waits repeat_gap seconds and\n\
+            repeats. Characters between < and > are sent run together as one prosign,\n\
+            e.g. <SOS> or <SK>. mode 1 is a hand key: sparks while `key` is 1 (wire\
+            \ it\nto a push button).\n\"\"\"\n\nimport numpy as np\nfrom gnuradio\
+            \ import gr\n\nMORSE = {\n    'A': '.-', 'B': '-...', 'C': '-.-.', 'D':\
+            \ '-..', 'E': '.', 'F': '..-.',\n    'G': '--.', 'H': '....', 'I': '..',\
+            \ 'J': '.---', 'K': '-.-', 'L': '.-..',\n    'M': '--', 'N': '-.', 'O':\
+            \ '---', 'P': '.--.', 'Q': '--.-', 'R': '.-.',\n    'S': '...', 'T': '-',\
+            \ 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',\n    'Y': '-.--',\
+            \ 'Z': '--..',\n    '0': '-----', '1': '.----', '2': '..---', '3': '...--',\
+            \ '4': '....-',\n    '5': '.....', '6': '-....', '7': '--...', '8': '---..',\
+            \ '9': '----.',\n    '.': '.-.-.-', ',': '--..--', '?': '..--..', '/':\
+            \ '-..-.', '=': '-...-',\n    '-': '-....-', '(': '-.--.', ')': '-.--.-',\
+            \ \"'\": '.----.', ':': '---...',\n}\n\n\ndef morse_units(text):\n   \
+            \ \"\"\"Key-down (1) / key-up (0) per Morse unit. Dot 1, dash 3, gaps\
+            \ 1/3/7.\"\"\"\n    units = []\n    for w_i, word in enumerate(text.upper().split()):\n\
+            \        if w_i:\n            units += [0] * 7\n        first, in_ps,\
+            \ ps_first = True, False, False\n        for ch in word:\n           \
+            \ if ch == '<':\n                in_ps, ps_first = True, True\n      \
+            \          continue\n            if ch == '>':\n                in_ps\
+            \ = False\n                continue\n            code = MORSE.get(ch)\n\
+            \            if not code:\n                continue\n            if not\
+            \ first:\n                units += [0] * (1 if in_ps and not ps_first\
+            \ else 3)\n            for e_i, el in enumerate(code):\n             \
+            \   if e_i:\n                    units.append(0)\n                units\
+            \ += [1] * (1 if el == '.' else 3)\n            first, ps_first = False,\
+            \ False\n    return units\n\n\nclass blk(gr.sync_block):\n    def __init__(self,\
+            \ samp_rate=2e6, text='CQD CQD CQD DE MGY 41.46N 50.14W',\n          \
+            \       wpm=20.0, repeat_gap=2.0, mode=0, key=0, spark_rate=840.0,\n \
+            \                orig_freq=500e3, decrement=0.2, coupling=0.1,\n     \
+            \            timing_jitter=0.02, amp_jitter=0.05, level=0.9):\n      \
+            \  gr.sync_block.__init__(self, name='Titanic Spark TX',\n           \
+            \                    in_sig=None, out_sig=[np.complex64])\n        self._rng\
+            \ = np.random.default_rng()\n        self._ready = False\n        self.samp_rate\
+            \ = float(samp_rate)\n        self.orig_freq = float(orig_freq)\n    \
+            \    self.text, self.wpm, self.repeat_gap = text, wpm, repeat_gap\n  \
+            \      self.decrement, self.coupling = decrement, coupling\n        self.mode,\
+            \ self.key = mode, key\n        self.spark_rate = spark_rate\n       \
+            \ self.timing_jitter, self.amp_jitter, self.level = timing_jitter, amp_jitter,\
+            \ level\n        self._pos = 0            # absolute index of out[0]\n\
+            \        self._next = 0.0         # absolute (fractional) index of the\
+            \ next spark\n        self._msg_pos = 0        # samples into the message\
+            \ loop\n        self._tail = np.zeros(0, np.complex64)\n        self._ready\
+            \ = True\n        self._build_spark()\n        self._build_message()\n\
+            \n    # --- live-settable parameters (GRC assigns these from the GUI)\
+            \ ---------\n    def _prop(name, rebuild):\n        def get(self):\n \
+            \           return getattr(self, '_' + name)\n\n        def set_(self,\
+            \ v):\n            setattr(self, '_' + name, v)\n            if self._ready:\n\
+            \                getattr(self, rebuild)()\n        return property(get,\
+            \ set_)\n\n    text = _prop('text', '_build_message')\n    wpm = _prop('wpm',\
+            \ '_build_message')\n    repeat_gap = _prop('repeat_gap', '_build_message')\n\
+            \    decrement = _prop('decrement', '_build_spark')\n    coupling = _prop('coupling',\
+            \ '_build_spark')\n    del _prop\n\n    def _build_spark(self):\n    \
+            \    fs, f0 = self.samp_rate, self.orig_freq\n        a = max(float(self._decrement),\
+            \ 1e-3) * f0          # amplitude decay, 1/s\n        n = int(min(np.log(1e4)\
+            \ / a, 0.05) * fs) + 1         # down to -80 dB\n        t = np.arange(n)\
+            \ / fs\n        k = min(max(float(self._coupling), 0.0), 0.9)\n      \
+            \  if k < 1e-3:\n            s = np.exp(-a * t).astype(np.complex128)\n\
+            \        else:\n            d1 = f0 * (1 / np.sqrt(1 + k) - 1)\n     \
+            \       d2 = f0 * (1 / np.sqrt(1 - k) - 1)\n            s = np.exp(-a\
+            \ * t) * (np.exp(2j * np.pi * d1 * t) - np.exp(2j * np.pi * d2 * t))\n\
+            \        self._spark = (s / np.abs(s).max()).astype(np.complex64)\n\n\
+            \    def _build_message(self):\n        u = morse_units(str(self._text))\n\
+            \        spu = max(1, int(round(self.samp_rate * 1.2 / max(float(self._wpm),\
+            \ 1.0))))\n        gap = max(7, int(round(float(self._repeat_gap) * self.samp_rate\
+            \ / spu)))\n        self._units = np.array(u + [0] * gap, dtype=np.int8)\
+            \   # always ends key-up\n        self._spu = spu\n        self._msg_pos\
+            \ = 0\n\n    def _keyed(self, i):\n        if int(self.mode) == 1:\n \
+            \           return bool(self.key)\n        u = self._units\n        return\
+            \ bool(u[((self._msg_pos + i) // self._spu) % len(u)])\n\n    def work(self,\
+            \ input_items, output_items):\n        out = output_items[0]\n       \
+            \ n = len(out)\n        spark = self._spark\n        buf = np.zeros(max(n\
+            \ + len(spark), len(self._tail)), np.complex64)\n        buf[:len(self._tail)]\
+            \ = self._tail\n        period = self.samp_rate / max(float(self.spark_rate),\
+            \ 1.0)\n        tj, aj = float(self.timing_jitter), float(self.amp_jitter)\n\
+            \        while self._next < self._pos + n:\n            i = int(round(self._next))\
+            \ - self._pos\n            if self._keyed(min(i, n - 1)):\n          \
+            \      amp = max(0.0, 1.0 + aj * self._rng.standard_normal())\n      \
+            \          # every spark restarts the RF, so its carrier phase is set\
+            \ by\n                # when it fired: exp(-j*2*pi*f0*t_spark) in baseband\n\
+            \                ph = np.exp(-2j * np.pi * self.orig_freq * ((self._pos\
+            \ + i) / self.samp_rate % 1.0))\n                buf[i:i + len(spark)]\
+            \ += (amp * ph) * spark\n            step = period * (1.0 + tj * self._rng.standard_normal())\n\
+            \            self._next += max(step, 0.05 * period)\n        y = buf[:n]\
+            \ * float(self.level)\n        mag = np.abs(y)\n        over = mag > 1.0\n\
+            \        if over.any():\n            y[over] /= mag[over]\n        out[:]\
+            \ = y\n        self._tail = buf[n:].copy()\n        self._pos += n\n \
+            \       self._msg_pos = (self._msg_pos + n) % (len(self._units) * self._spu)\n\
+            \        return n\n"
+        affinity: ''
+        alias: ''
+        amp_jitter: '0.05'
+        comment: ''
+        coupling: coupling
+        decrement: decrement
+        key: key
+        level: '0.9'
+        maxoutbuf: '0'
+        minoutbuf: '0'
+        mode: mode
+        orig_freq: orig_freq
+        repeat_gap: '2.0'
+        samp_rate: samp_rate
+        spark_rate: spark_rate
+        text: message
+        timing_jitter: jitter
+        wpm: wpm
+    states:
+        _io_cache: ('Titanic Spark TX', 'blk', [('samp_rate', '2000000.0'), ('text',
+            "'CQD CQD CQD DE MGY 41.46N 50.14W'"), ('wpm', '20.0'), ('repeat_gap',
+            '2.0'), ('mode', '0'), ('key', '0'), ('spark_rate', '840.0'), ('orig_freq',
+            '500000.0'), ('decrement', '0.2'), ('coupling', '0.1'), ('timing_jitter',
+            '0.02'), ('amp_jitter', '0.05'), ('level', '0.9')], [], [('0', 'complex',
+            1)], '', ['amp_jitter', 'coupling', 'decrement', 'key', 'level', 'mode',
+            'orig_freq', 'repeat_gap', 'samp_rate', 'spark_rate', 'text', 'timing_jitter',
+            'wpm'])
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 8
+        - 420
+        rotation: 0
+        state: enabled
+-   name: spectrum
+    id: qtgui_freq_sink_x
+    parameters:
+        affinity: ''
+        alias: ''
+        alpha1: '1.0'
+        alpha10: '1.0'
+        alpha2: '1.0'
+        alpha3: '1.0'
+        alpha4: '1.0'
+        alpha5: '1.0'
+        alpha6: '1.0'
+        alpha7: '1.0'
+        alpha8: '1.0'
+        alpha9: '1.0'
+        autoscale: 'False'
+        average: '0.05'
+        axislabels: 'True'
+        bw: samp_rate
+        color1: '"blue"'
+        color10: '"dark blue"'
+        color2: '"red"'
+        color3: '"green"'
+        color4: '"black"'
+        color5: '"cyan"'
+        color6: '"magenta"'
+        color7: '"yellow"'
+        color8: '"dark red"'
+        color9: '"dark green"'
+        comment: ''
+        ctrlpanel: 'False'
+        fc: tx_freq
+        fftsize: '4096'
+        freqhalf: 'True'
+        grid: 'True'
+        gui_hint: tab@1
+        label: Relative Gain
+        label1: ''
+        label10: ''''''
+        label2: ''''''
+        label3: ''''''
+        label4: ''''''
+        label5: ''''''
+        label6: ''''''
+        label7: ''''''
+        label8: ''''''
+        label9: ''''''
+        legend: 'False'
+        maxoutbuf: '0'
+        minoutbuf: '0'
+        name: '"Transmitted spectrum"'
+        nconnections: '1'
+        norm_window: 'False'
+        showports: 'False'
+        tr_chan: '0'
+        tr_level: '0.0'
+        tr_mode: qtgui.TRIG_MODE_FREE
+        tr_tag: '""'
+        type: complex
+        units: dB
+        update_time: '0.10'
+        width1: '1'
+        width10: '1'
+        width2: '1'
+        width3: '1'
+        width4: '1'
+        width5: '1'
+        width6: '1'
+        width7: '1'
+        width8: '1'
+        width9: '1'
+        wintype: window.WIN_BLACKMAN_hARRIS
+        ymax: '0'
+        ymin: '-110'
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 560
+        - 520
+        rotation: 0
+        state: enabled
+-   name: tab
+    id: qtgui_tab_widget
+    parameters:
+        alias: ''
+        comment: ''
+        gui_hint: ''
+        label0: Controls
+        label1: Spectrum
+        label10: Tab 10
+        label11: Tab 11
+        label12: Tab 12
+        label13: Tab 13
+        label14: Tab 14
+        label15: Tab 15
+        label16: Tab 16
+        label17: Tab 17
+        label18: Tab 18
+        label19: Tab 19
+        label2: Scope
+        label3: Tab 3
+        label4: Tab 4
+        label5: Tab 5
+        label6: Tab 6
+        label7: Tab 7
+        label8: Tab 8
+        label9: Tab 9
+        num_tabs: '3'
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 584
+        - 300
+        rotation: 0
+        state: enabled
+-   name: throttle
+    id: blocks_throttle2
+    parameters:
+        affinity: ''
+        alias: ''
+        comment: No HackRF? Enable this and no_hackrf, disable hackrf_sink. It paces
+            the graph
+        ignoretag: 'True'
+        limit: auto
+        maximum: '0.1'
+        maxoutbuf: '0'
+        minoutbuf: '0'
+        samples_per_second: samp_rate
+        type: complex
+        vlen: '1'
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 304
+        - 340
+        rotation: 0
+        state: disabled
+-   name: tx_check
+    id: snippet
+    parameters:
+        alias: ''
+        code: "# Warns before transmitting where other services are, or at a gain\
+            \ high enough\n# for an antenna to put this on the air. Warnings only.\n\
+            import sys, time\n_warn = []\n_lo, _hi = self.tx_freq - self.samp_rate\
+            \ / 2, self.tx_freq + self.samp_rate / 2\n_warn.append(f'This replica\
+            \ fills {_lo / 1e6:.3f} to {_hi / 1e6:.3f} MHz, the whole sample rate.')\n\
+            if _lo < 434.79e6 and _hi > 433.05e6:\n    _warn.append('That covers 433.05-434.79\
+            \ MHz: key fobs, tyre sensors, weather stations')\n    _warn.append('and\
+            \ remote controls (433.92 MHz).')\nif 108e6 < _hi and _lo < 137e6:\n \
+            \   _warn.append('108 to 137 MHz is aircraft navigation and voice radio.')\n\
+            if _hi >= 608e6:\n    _warn.append('608 MHz and up is radio astronomy,\
+            \ cellular and public-safety radio.')\nif self.hackrf_amp or self.rf_gain\
+            \ > 20:\n    _warn.append(f'HackRF gain {self.rf_gain} dB' + (' with the\
+            \ +14 dB amp.' if self.hackrf_amp else '.'))\n    _warn.append('With an\
+            \ antenna attached, that goes out over the air.')\nprint('!' * 76 + '\\\
+            nWARNING\\n' + '\\n'.join(_warn)\n      + '\\nSpark (damped-wave) emissions\
+            \ are banned on the air. Transmit only into a'\n      + '\\ndummy load,\
+            \ or into coax with attenuators.\\n' + '!' * 76,\n      file=sys.stderr,\
+            \ flush=True)\nif sys.stderr.isatty() and (self.hackrf_amp or self.rf_gain\
+            \ > 20):\n    for _n in range(5, 0, -1):\n        print(f'Starting in\
+            \ {_n} s (Ctrl-C to stop)', file=sys.stderr, flush=True)\n        time.sleep(1)"
+        comment: Warns before transmitting (see the README's Legal section)
+        priority: '0'
+        section: main_after_init
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 800
+        - 12
+        rotation: 0
+        state: enabled
+-   name: vol
+    id: blocks_multiply_const_vxx
+    parameters:
+        affinity: ''
+        alias: ''
+        comment: ''
+        const: volume
+        maxoutbuf: '0'
+        minoutbuf: '0'
+        type: float
+        vlen: '1'
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 1040
+        - 796
+        rotation: 0
+        state: enabled
+connections:
+-   - dc_block
+    - '0'
+    - vol
+    - '0'
+-   - detector
+    - '0'
+    - rx_resamp
+    - '0'
+-   - env
+    - '0'
+    - scope_spark
+    - '0'
+-   - env
+    - '0'
+    - scope_train
+    - '0'
+-   - rx_filter
+    - '0'
+    - detector
+    - '0'
+-   - rx_resamp
+    - '0'
+    - dc_block
+    - '0'
+-   - spark_tx
+    - '0'
+    - env
+    - '0'
+-   - spark_tx
+    - '0'
+    - hackrf_sink
+    - '0'
+-   - spark_tx
+    - '0'
+    - rx_filter
+    - '0'
+-   - spark_tx
+    - '0'
+    - spectrum
+    - '0'
+-   - spark_tx
+    - '0'
+    - throttle
+    - '0'
+-   - throttle
+    - '0'
+    - no_hackrf
+    - '0'
+-   - vol
+    - '0'
+    - audio_out
+    - '0'
+metadata:
+    file_format: 1
+    grc_version: 3.10.9.2
