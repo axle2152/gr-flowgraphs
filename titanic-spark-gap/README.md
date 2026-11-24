@@ -11,7 +11,7 @@ envelope detector, so you can hear the result without a receiver.
 | Transmitter | Marconi 5 kW synchronous rotary spark | modelled spark by spark, as complex baseband |
 | Spark rate | 840 a second: a 300 V, 420 Hz alternator (8-pole, 6300 rpm) and a 16-stud disc discharger, sparking at both peaks of each cycle | 840/s (adjustable) |
 | Note heard on a detector | "musical 840 Hz" | 840 Hz and harmonics |
-| Wavelength | 600 m (500 kHz), also 325 m | decay and bandwidth worked out at 500 kHz; transmitted at `tx_freq` (433.5 MHz) |
+| Wavelength | 600 m (500 kHz), also 325 m | 500 kHz (`tx_freq`) |
 | Aerial coupling | jigger (oscillation transformer) | two coupled circuits, coupling k |
 | Damping | not recorded; the 1912 US law limited ships to a decrement of 0.2 | decrement 0.2 (adjustable) |
 | Keying | the key switched the alternator circuit (about 17 A at 300 V, through a relay) | the key starts and stops whole sparks |
@@ -27,9 +27,19 @@ Sources are listed at the end.
 
 ## Running it
 
-Open `titanic_spark_gap.grc` in GNU Radio Companion, set `tx_freq`, and run
-it. Before it starts it prints a warning: the replica fills the whole sample
-rate, and it says what else is in that range (see [Legal](#legal)).
+Connect the HackRF to the receiver or analyser by coax, through attenuators
+(this is closed loop only, see [Legal](#legal)). Open `titanic_spark_gap.grc`
+in GNU Radio Companion and run it. Before it starts it prints a warning
+saying what else is in the range the replica covers.
+
+The spark goes out at `tx_freq`, 500 kHz, the Titanic's 600 m wavelength.
+The HackRF is specified from 1 MHz, but it works at 500 kHz with less
+output, which is plenty into coax. It's tuned to `lo_freq` (1 MHz), and
+a rotator moves the spark down to `tx_freq`. That keeps the HackRF's own
+carrier leak, which sits at the frequency it's tuned to, 500 kHz away from
+the spark instead of in the middle of it. A spark has no carrier, and a
+leak there would put one back. For the 325 m wavelength, set `tx_freq` to
+923e3.
 
 | Control | What it does |
 |---|---|
@@ -95,8 +105,9 @@ add up to a smooth, broad hump with no carrier. The note is in the
 envelope, which repeats 840 times a second. With the jitter set to 0 you
 can see the other case: a comb of lines 840 Hz apart.
 
-The replica is made at 500 kHz's scale and transmitted at `tx_freq`, so
-it takes up the bandwidth the original did. At the defaults (δ 0.2, k 0.1)
+The decay and the jigger split are worked out at `orig_freq` (500 kHz), so
+the replica takes up the bandwidth the original did wherever `tx_freq` is.
+At the defaults (δ 0.2, k 0.1)
 it measures 68 kHz wide at −3 dB, 183 kHz at −20 dB and 587 kHz at −40 dB.
 With k at 0 it's 31 kHz at −3 dB, but the sharp start of each spark
 spreads it much further: −32 dB at ±1 MHz.
@@ -136,11 +147,10 @@ stops whole sparks, and there's a hand key.
 
 ## What it can't reproduce
 
-- **The frequency.** The HackRF doesn't go down to 500 kHz (its range starts
-  at 1 MHz), so the replica keeps the original's bandwidth somewhere else.
 - **The far skirts.** A spark's spectrum keeps going. The replica carries
-  only ±`samp_rate`/2 (±1 MHz at 2 Msps). Raise `samp_rate`, in whole MHz,
-  to carry more.
+  only what the sample rate holds: 0 to 2 MHz at 2 Msps. To carry more,
+  raise `samp_rate` (in whole MHz) and `lo_freq` with it, keeping
+  `lo_freq` at `samp_rate`/2 or above so the band doesn't run below 0 Hz.
 - **Unrecorded numbers.** The set's decrement, coupling and spark-to-spark
   variation weren't recorded. The defaults are reasonable estimates, and
   each is a slider.
@@ -153,12 +163,12 @@ stops whole sparks, and there's a hand key.
 
 ## Legal
 
-Spark (damped-wave) emissions are banned on the air. The replica also
-fills its whole sample rate: 2 MHz around `tx_freq`. At the default
-433.5 MHz that covers the 433.92 MHz band used by key fobs, tyre-pressure
-sensors and weather stations, as well as part of the 70 cm amateur band.
-
-Transmit only into a dummy load, or into coax with attenuators (30-60 dB).
+Spark (damped-wave) emissions are banned on the air, so this is a
+closed-loop project: the HackRF into a dummy load, or into a receiver or
+analyser by coax with attenuators (30-60 dB). Never an antenna. The
+replica's skirts also fill everything from 0 to 2 MHz: aeronautical and
+maritime beacons and maritime radio below 535 kHz, and the AM broadcast
+band from 530 kHz.
 The flowgraph warns you before it starts (a Python Snippet block,
 `tx_check`), saying what the replica covers and whether the gain is high
 enough (above 20 dB, or with the +14 dB amp) for an antenna to put it on

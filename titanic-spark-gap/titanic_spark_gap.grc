@@ -140,6 +140,21 @@ blocks:
         - 300
         rotation: 0
         state: enabled
+-   name: lo_freq
+    id: variable
+    parameters:
+        comment: HackRF tuning. Kept off tx_freq so its carrier leak is not on the
+            spark
+        value: 1e6
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 296
+        - 76
+        rotation: 0
+        state: enabled
 -   name: message
     id: variable_qtgui_entry
     parameters:
@@ -291,8 +306,8 @@ blocks:
 -   name: tx_freq
     id: variable
     parameters:
-        comment: Where the replica is transmitted
-        value: 433.5e6
+        comment: 'Where the spark is transmitted: 500 kHz = 600 m, as on the Titanic'
+        value: 500e3
     states:
         bus_sink: false
         bus_source: false
@@ -430,7 +445,7 @@ blocks:
         alias: ''
         amp: hackrf_amp
         bandwidth: '0'
-        center_freq: tx_freq
+        center_freq: lo_freq
         comment: ''
         dev_args: ''''''
         samp_rate: samp_rate
@@ -443,6 +458,21 @@ blocks:
         coordinate:
         - 560
         - 420
+        rotation: 0
+        state: enabled
+-   name: import_math
+    id: import
+    parameters:
+        alias: ''
+        comment: ''
+        imports: import math
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 8
+        - 76
         rotation: 0
         state: enabled
 -   name: no_hackrf
@@ -710,6 +740,25 @@ blocks:
         - 700
         rotation: 0
         state: enabled
+-   name: shift
+    id: blocks_rotator_cc
+    parameters:
+        affinity: ''
+        alias: ''
+        comment: Moves the spark from lo_freq to tx_freq
+        maxoutbuf: '0'
+        minoutbuf: '0'
+        phase_inc: 2 * math.pi * (tx_freq - lo_freq) / samp_rate
+        tag_inc_update: 'False'
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 304
+        - 420
+        rotation: 0
+        state: enabled
 -   name: spark_tx
     id: epy_block
     parameters:
@@ -894,7 +943,7 @@ blocks:
         color9: '"dark green"'
         comment: ''
         ctrlpanel: 'False'
-        fc: tx_freq
+        fc: lo_freq
         fftsize: '4096'
         freqhalf: 'True'
         grid: 'True'
@@ -1012,10 +1061,13 @@ blocks:
         alias: ''
         code: "# Warns before transmitting where other services are, or at a gain\
             \ high enough\n# for an antenna to put this on the air. Warnings only.\n\
-            import sys, time\n_warn = []\n_lo, _hi = self.tx_freq - self.samp_rate\
-            \ / 2, self.tx_freq + self.samp_rate / 2\n_warn.append(f'This replica\
-            \ fills {_lo / 1e6:.3f} to {_hi / 1e6:.3f} MHz, the whole sample rate.')\n\
-            if _lo < 434.79e6 and _hi > 433.05e6:\n    _warn.append('That covers 433.05-434.79\
+            import sys, time\n_warn = []\n_lo, _hi = max(0.0, self.lo_freq - self.samp_rate\
+            \ / 2), self.lo_freq + self.samp_rate / 2\n_warn.append(f'Spark at {self.tx_freq\
+            \ / 1e3:.0f} kHz; its skirts fill {_lo / 1e6:.3f} to {_hi / 1e6:.3f} MHz.')\n\
+            if _lo < 535e3 and _hi > 190e3:\n    _warn.append('190-535 kHz: aeronautical\
+            \ and maritime beacons and maritime radio.')\nif _lo < 1700e3 and _hi\
+            \ > 530e3:\n    _warn.append('530-1700 kHz: AM broadcasting.')\nif _lo\
+            \ < 434.79e6 and _hi > 433.05e6:\n    _warn.append('That covers 433.05-434.79\
             \ MHz: key fobs, tyre sensors, weather stations')\n    _warn.append('and\
             \ remote controls (433.92 MHz).')\nif 108e6 < _hi and _lo < 137e6:\n \
             \   _warn.append('108 to 137 MHz is aircraft navigation and voice radio.')\n\
@@ -1025,11 +1077,11 @@ blocks:
             \ +14 dB amp.' if self.hackrf_amp else '.'))\n    _warn.append('With an\
             \ antenna attached, that goes out over the air.')\nprint('!' * 76 + '\\\
             nWARNING\\n' + '\\n'.join(_warn)\n      + '\\nSpark (damped-wave) emissions\
-            \ are banned on the air. Transmit only into a'\n      + '\\ndummy load,\
-            \ or into coax with attenuators.\\n' + '!' * 76,\n      file=sys.stderr,\
-            \ flush=True)\nif sys.stderr.isatty() and (self.hackrf_amp or self.rf_gain\
-            \ > 20):\n    for _n in range(5, 0, -1):\n        print(f'Starting in\
-            \ {_n} s (Ctrl-C to stop)', file=sys.stderr, flush=True)\n        time.sleep(1)"
+            \ are banned on the air. Closed loop only:'\n      + '\\na dummy load,\
+            \ or coax with attenuators.\\n' + '!' * 76,\n      file=sys.stderr, flush=True)\n\
+            if sys.stderr.isatty() and (self.hackrf_amp or self.rf_gain > 20):\n \
+            \   for _n in range(5, 0, -1):\n        print(f'Starting in {_n} s (Ctrl-C\
+            \ to stop)', file=sys.stderr, flush=True)\n        time.sleep(1)"
         comment: Warns before transmitting (see the README's Legal section)
         priority: '0'
         section: main_after_init
@@ -1087,13 +1139,17 @@ connections:
     - '0'
     - dc_block
     - '0'
+-   - shift
+    - '0'
+    - hackrf_sink
+    - '0'
+-   - shift
+    - '0'
+    - spectrum
+    - '0'
 -   - spark_tx
     - '0'
     - env
-    - '0'
--   - spark_tx
-    - '0'
-    - hackrf_sink
     - '0'
 -   - spark_tx
     - '0'
@@ -1101,7 +1157,7 @@ connections:
     - '0'
 -   - spark_tx
     - '0'
-    - spectrum
+    - shift
     - '0'
 -   - spark_tx
     - '0'
