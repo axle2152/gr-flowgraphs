@@ -494,6 +494,48 @@ blocks:
         - 348
         rotation: 0
         state: disabled
+-   name: plot_add
+    id: blocks_add_xx
+    parameters:
+        affinity: ''
+        alias: ''
+        comment: ''
+        maxoutbuf: '0'
+        minoutbuf: '0'
+        num_inputs: '2'
+        type: complex
+        vlen: '1'
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 456
+        - 540
+        rotation: 0
+        state: enabled
+-   name: plot_floor
+    id: analog_noise_source_x
+    parameters:
+        affinity: ''
+        alias: ''
+        amp: 1e-6
+        comment: 'Display only: silence is -inf dB, and one silent frame would blank
+            the averaged plot for good'
+        maxoutbuf: '0'
+        minoutbuf: '0'
+        noise_type: analog.GR_GAUSSIAN
+        seed: '0'
+        type: complex
+    states:
+        bus_sink: false
+        bus_source: false
+        bus_structure: null
+        coordinate:
+        - 304
+        - 560
+        rotation: 0
+        state: enabled
 -   name: rx_filter
     id: low_pass_filter
     parameters:
@@ -928,7 +970,7 @@ blocks:
         alpha8: '1.0'
         alpha9: '1.0'
         autoscale: 'False'
-        average: '0.05'
+        average: '0.2'
         axislabels: 'True'
         bw: samp_rate
         color1: '"blue"'
@@ -942,7 +984,7 @@ blocks:
         color8: '"dark red"'
         color9: '"dark green"'
         comment: ''
-        ctrlpanel: 'False'
+        ctrlpanel: 'True'
         fc: lo_freq
         fftsize: '4096'
         freqhalf: 'True'
@@ -984,8 +1026,8 @@ blocks:
         width8: '1'
         width9: '1'
         wintype: window.WIN_BLACKMAN_hARRIS
-        ymax: '0'
-        ymin: '-110'
+        ymax: '-30'
+        ymin: '-140'
     states:
         bus_sink: false
         bus_source: false
@@ -1131,6 +1173,14 @@ connections:
     - '0'
     - scope_train
     - '0'
+-   - plot_add
+    - '0'
+    - spectrum
+    - '0'
+-   - plot_floor
+    - '0'
+    - plot_add
+    - '1'
 -   - rx_filter
     - '0'
     - detector
@@ -1145,7 +1195,7 @@ connections:
     - '0'
 -   - shift
     - '0'
-    - spectrum
+    - plot_add
     - '0'
 -   - spark_tx
     - '0'

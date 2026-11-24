@@ -58,8 +58,16 @@ The default message is the first distress call as logged:
 `MKC MKC SOS SOS SOS DE MGY MGY MGY` (MKC was the Olympic). After each pass
 it waits 2 s (`repeat_gap` on the block) and starts again.
 
-The **Spectrum** tab shows the transmitted spectrum. The **Scope** tab shows
-one spark's envelope and a train of them.
+The **Spectrum** tab shows the signal sent to the HackRF (computed, so it
+works without one, but it doesn't show what the HackRF adds). In Message mode
+the hump rises and falls with the keying and sits lower than with the key
+held, because the plot averages in dB and the key-up gaps pull it down. Tick
+**Max Hold** in the side panel to see the whole shape. The plot's input has a
+noise floor far below anything visible added (`plot_floor`, display only):
+key-up silence is exact zeros, which is minus infinity in dB, and one silent
+frame would otherwise blank the averaged plot for good.
+
+The **Scope** tab shows one spark's envelope and a train of them.
 
 ### Listening to it
 
